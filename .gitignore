@@ -1,0 +1,3 @@
+# .gitignore
+urlBbdd.env
+node_modules/
