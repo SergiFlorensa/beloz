@@ -18,7 +18,7 @@ app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 require('dotenv').config();
 
-//const { Pool } = require('pg');
+
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -27,15 +27,7 @@ const pool = new Pool({
   },
 });
 
-/*
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'beloz',
-  password: 'Sfmsfm-1994',
-  port: 5432,
-});
-*/
+
 app.use(session({
   secret: '4f8a0e7f3e7cbbd2e7c9eeb1d5c6cfe85b3d1d0f9e7f3b4c08e9d13f7c66d084',
   resave: false,
