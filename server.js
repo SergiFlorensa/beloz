@@ -93,6 +93,32 @@ app.post('/login', async (req, res) => {
   }
 });
 
+
+
+app.put('/update-email', async (req, res) => {
+  const { userId, newEmail } = req.body;
+  try {
+    // Actualiza el correo electrónico en la base de datos
+    const result = await pool.query('UPDATE users SET email = $1 WHERE id = $2 RETURNING *', [newEmail, userId]);
+
+    if (result.rows.length > 0) {
+      res.status(200).json({ message: 'Email updated successfully' });
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (err) {
+    console.error('Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+
+
+
+
 // Cerrar sesión
 app.post('/logout', (req, res) => {
   // Para JWT, no necesitas hacer nada en el servidor para cerrar sesión
