@@ -96,9 +96,9 @@ app.post('/login', async (req, res) => {
 
 
 app.put('/update-email', async (req, res) => {
-  const { userId, newEmail } = req.body;
+  const { userId, newEmail } = req.body; // Asegúrate de que esto esté recibiendo correctamente
   try {
-    const result = await pool.query('UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *', [newEmail, userId]);
+    const result = await pool.query('UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *', [newEmail, parseInt(userId)]);
 
     if (result.rows.length > 0) {
       res.status(200).json({ message: 'Email updated successfully' });
@@ -110,6 +110,7 @@ app.put('/update-email', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 
