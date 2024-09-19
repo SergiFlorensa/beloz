@@ -96,9 +96,12 @@ app.post('/login', async (req, res) => {
 
 
 app.put('/update-email', async (req, res) => {
-  const { userId, newEmail } = req.body; // Asegúrate de que esto esté recibiendo correctamente
+  const { userId, newEmail } = req.body; // Asegúrate de que los nombres coincidan
   try {
-    const result = await pool.query('UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *', [newEmail, parseInt(userId)]);
+    const result = await pool.query(
+      'UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *', // Usa el nombre correcto de la columna
+      [newEmail, userId]
+    );
 
     if (result.rows.length > 0) {
       res.status(200).json({ message: 'Email updated successfully' });
@@ -110,6 +113,7 @@ app.put('/update-email', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 
