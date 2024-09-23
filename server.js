@@ -76,6 +76,7 @@ app.post('/login', async (req, res) => {
       if (match) {
         const token = jwt.sign({ id: user.id }, 'your_secret_key', { expiresIn: '1h' });
         res.status(200).json({
+          id_user:user.id_user,
           token,
           name: user.name,
           surname: user.surname,
@@ -96,11 +97,23 @@ app.post('/login', async (req, res) => {
 
 
 app.put('/update-email', async (req, res) => {
-  const { userId, newEmail } = req.body; // Asegúrate de que los nombres coincidan
+  const { userId, newEmail } = req.body;
+
+  if (!newEmail || !userId) {
+    return res.status(400).json({ error: 'Missing userId or newEmail' });
+  }
+
   try {
+    // Asegúrate de que el userId es un número
+    const userIdInt = parseInt(userId, 10);
+    if (isNaN(userIdInt)) {
+      return res.status(400).json({ error: 'Invalid userId' });
+    }
+
+    // Actualizar el correo en la base de datos
     const result = await pool.query(
-      'UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *', // Usa el nombre correcto de la columna
-      [newEmail, userId]
+      'UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *',
+      [newEmail, userIdInt]
     );
 
     if (result.rows.length > 0) {
@@ -113,6 +126,7 @@ app.put('/update-email', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 
