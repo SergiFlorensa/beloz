@@ -97,15 +97,15 @@ app.post('/login', async (req, res) => {
 
 
 app.put('/update-email', async (req, res) => {
-  const { userId, newEmail } = req.body;
+  const { id_user, newEmail } = req.body;
 
-  if (!newEmail || !userId) {
+  if (!newEmail || !id_user) {
     return res.status(400).json({ error: 'Missing userId or newEmail' });
   }
 
   try {
     // Asegúrate de que el userId es un número
-    const userIdInt = parseInt(userId, 10);
+    const userIdInt = parseInt(id_user, 10);
     if (isNaN(userIdInt)) {
       return res.status(400).json({ error: 'Invalid userId' });
     }
