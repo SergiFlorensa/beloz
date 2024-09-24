@@ -136,6 +136,23 @@ app.put('/update-user-email', async (req, res) => {
   }
 });
 
+// Endpoint para verificar la existencia del correo electrónico
+app.get('/check-email', async (req, res) => {
+  const { email } = req.query;
+
+  // Validación de entrada
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    res.status(200).json({ exists: result.rows.length > 0 }); // Devuelve true si ya existe, false si no
+  } catch (err) {
+    console.error('Error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 
