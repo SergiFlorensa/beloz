@@ -105,34 +105,34 @@ app.put('/update-user-email', async (req, res) => {
 
   // Validación de entrada
   if (!newEmail) {
-    return res.status(400).json({ error: 'New email is required' });
+      return res.status(400).json({ error: 'New email is required' });
   }
 
   try {
-    // Verificar el token y obtener el ID del usuario
-    const decoded = jwt.verify(token, 'your_secret_key');
-    const userId = decoded.id; // userId debe ser String
+      // Verificar el token y obtener el ID del usuario
+      const decoded = jwt.verify(token, 'your_secret_key');
+      const userId = decoded.id; // userId debe ser String
 
-    // Verificar si el nuevo correo ya está registrado y no es el mismo que el actual
-    const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [newEmail]);
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
+      // Verificar si el nuevo correo ya está registrado
+      const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [newEmail]);
+      if (existingUser.rows.length > 0) {
+          return res.status(400).json({ error: 'Email already registered' });
+      }
 
-    // Actualizar el correo en la base de datos
-    const result = await pool.query(
-      'UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *',
-      [newEmail, userId]
-    );
+      // Actualizar el correo en la base de datos
+      const result = await pool.query(
+          'UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *',
+          [newEmail, userId] // userId debe ser String
+      );
 
-    if (result.rows.length > 0) {
-      res.status(200).json({ message: 'Email updated successfully', email: newEmail });
-    } else {
-      res.status(404).json({ error: 'User not found' });
-    }
+      if (result.rows.length > 0) {
+          res.status(200).json({ message: 'Email updated successfully', email: newEmail });
+      } else {
+          res.status(404).json({ error: 'User not found' });
+      }
   } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
+      console.error('Error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
   }
 });
 
