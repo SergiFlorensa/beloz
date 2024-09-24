@@ -138,16 +138,6 @@ app.put('/update-email', async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
 // Cerrar sesión
 app.post('/logout', (req, res) => {
   // Para JWT, no necesitas hacer nada en el servidor para cerrar sesión
