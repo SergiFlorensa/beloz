@@ -113,7 +113,7 @@ app.put('/update-user-email', async (req, res) => {
     const decoded = jwt.verify(token, 'your_secret_key');
     const userId = decoded.id; // userId debe ser String
 
-    // Verificar si el nuevo correo ya está registrado
+    // Verificar si el nuevo correo ya está registrado y no es el mismo que el actual
     const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [newEmail]);
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ error: 'Email already registered' });
@@ -122,7 +122,7 @@ app.put('/update-user-email', async (req, res) => {
     // Actualizar el correo en la base de datos
     const result = await pool.query(
       'UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *',
-      [newEmail, userId] // userId debe ser String
+      [newEmail, userId]
     );
 
     if (result.rows.length > 0) {
@@ -135,6 +135,7 @@ app.put('/update-user-email', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 // Endpoint para verificar la existencia del correo electrónico
 app.get('/check-email', async (req, res) => {
