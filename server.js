@@ -98,7 +98,7 @@ app.post('/login', async (req, res) => {
 
 app.put('/update-email', async (req, res) => {
   const { id_user, newEmail } = req.body;
-
+  console.log('Received:', { id_user, newEmail });
   if (!newEmail || !id_user) {
     return res.status(400).json({ error: 'Missing userId or newEmail' });
   }
