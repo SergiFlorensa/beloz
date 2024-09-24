@@ -136,6 +136,17 @@ app.put('/update-email', async (req, res) => {
   }
 });
 
+// Verificar existencia del correo electrónico
+app.get('/check-email', async (req, res) => {
+  const { email } = req.query;
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    res.status(200).json({ exists: result.rows.length > 0 });
+  } catch (err) {
+    console.error('Error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 // Cerrar sesión
