@@ -96,8 +96,8 @@ app.post('/login', async (req, res) => {
 
 
 
-// Actualizar correo electrónico
-app.put('/update-email', async (req, res) => {
+// Endpoint para que el usuario actualice su correo electrónico
+app.put('/update-user-email', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
 
@@ -136,22 +136,6 @@ app.put('/update-email', async (req, res) => {
   }
 });
 
-
-// Verificar existencia del correo electrónico
-app.get('/check-email', async (req, res) => {
-  const { email } = req.query;
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
-  }
-
-  try {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    res.status(200).json({ exists: result.rows.length > 0 });
-  } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 
 
