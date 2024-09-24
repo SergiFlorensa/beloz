@@ -111,7 +111,7 @@ app.put('/update-email', async (req, res) => {
   try {
     // Verificar el token y obtener el ID del usuario
     const decoded = jwt.verify(token, 'your_secret_key');
-    const userId = decoded.id;
+    const userId = decoded.id; // userId debe ser String
 
     // Verificar si el nuevo correo ya está registrado
     const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [newEmail]);
@@ -122,7 +122,7 @@ app.put('/update-email', async (req, res) => {
     // Actualizar el correo en la base de datos
     const result = await pool.query(
       'UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *',
-      [newEmail, userId]
+      [newEmail, userId] // userId debe ser String
     );
 
     if (result.rows.length > 0) {
@@ -136,9 +136,14 @@ app.put('/update-email', async (req, res) => {
   }
 });
 
+
 // Verificar existencia del correo electrónico
 app.get('/check-email', async (req, res) => {
   const { email } = req.query;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
   try {
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     res.status(200).json({ exists: result.rows.length > 0 });
@@ -147,6 +152,7 @@ app.get('/check-email', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 // Cerrar sesión
