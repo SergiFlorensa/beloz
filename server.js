@@ -113,7 +113,7 @@ app.put('/update-email', async (req, res) => {
     // Actualizar el correo en la base de datos
     const result = await pool.query(
       'UPDATE users SET email = $1 WHERE id_user = $2 RETURNING *',
-      [newEmail, userId]
+      [newEmail, userIdInt]
     );
 
     if (result.rows.length > 0) {
