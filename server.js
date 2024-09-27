@@ -176,32 +176,7 @@ app.get('/profile', (req, res) => {
   });
 });
 
-// Crear un nuevo pedido
-app.post('/orders', async (req, res) => {
-  const { user_id, restaurant_id, total_amount, order_status } = req.body;
-  try {
-    const result = await pool.query(
-      'INSERT INTO orders (user_id, restaurant_id, total_amount, order_status) VALUES ($1, $2, $3, $4) RETURNING *',
-      [user_id, restaurant_id, total_amount, order_status]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
 
-// Obtener los pedidos de un usuario
-app.get('/orders/:user_id', async (req, res) => {
-  const { user_id } = req.params;
-  try {
-    const result = await pool.query('SELECT * FROM orders WHERE user_id = $1', [user_id]);
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // Obtener los ítems de menú de un restaurante
 app.get('/menu_items/:restaurant_id', async (req, res) => {
@@ -215,32 +190,7 @@ app.get('/menu_items/:restaurant_id', async (req, res) => {
   }
 });
 
-// Crear un nuevo ítem en un pedido
-app.post('/order_items', async (req, res) => {
-  const { order_id, menu_item_id, quantity, price } = req.body;
-  try {
-    const result = await pool.query(
-      'INSERT INTO order_items (order_id, menu_item_id, quantity, price) VALUES ($1, $2, $3, $4) RETURNING *',
-      [order_id, menu_item_id, quantity, price]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
 
-// Obtener los ítems de un pedido
-app.get('/order_items/:order_id', async (req, res) => {
-  const { order_id } = req.params;
-  try {
-    const result = await pool.query('SELECT * FROM order_items WHERE order_id = $1', [order_id]);
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // Obtener los restaurantes filtrados por país
 app.get('/restaurants', async (req, res) => {
@@ -264,12 +214,23 @@ app.get('/restaurants', async (req, res) => {
 });
 
 
-app.get('/popular_brands', async (req, res) => {
+/*app.get('/popular_brands', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM public.popular_brands');
+    const result = await pool.query('SELECT * FROM "public.popular_brands"');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
+    res.status(500).send('Error retrieving data from database');
+  }
+});
+*/
+
+app.get('/restaurantes/populares', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM restaurants WHERE "EsPopular" = true');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error retrieving popular brands:', err.message);
     res.status(500).send('Error retrieving data from database');
   }
 });
