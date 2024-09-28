@@ -196,7 +196,7 @@ app.get('/menu_items/:restaurant_id', async (req, res) => {
 app.get('/restaurants', async (req, res) => {
   const country = req.query.country;
 
-  let query = 'SELECT * FROM restaurants';
+  let query = 'SELECT * FROM restaurante';
   let params = [];
 
   if (country) {
@@ -227,7 +227,7 @@ app.get('/restaurants', async (req, res) => {
 
 app.get('/restaurantes/populares', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM restaurants WHERE "EsPopular" = true');
+    const result = await pool.query('SELECT * FROM restaurante WHERE "EsPopular" = true');
     res.json(result.rows);
   } catch (err) {
     console.error('Error retrieving popular brands:', err.message);
@@ -236,12 +236,12 @@ app.get('/restaurantes/populares', async (req, res) => {
 });
 
 app.get('/platos', async (req, res) => {
-  const { popular_brand_id } = req.query;
+  const { restaurant_id } = req.query;
 
   try {
     const result = await pool.query(
-      'SELECT * FROM platos WHERE popular_brand_id = $1',
-      [popular_brand_id]
+      'SELECT * FROM platos WHERE restaurantid = $1',
+      [restaurant_id]
     );
     res.json(result.rows);
   } catch (error) {
@@ -260,7 +260,7 @@ app.get('/restaurants/filter', async (req, res) => {
 
   try {
     // Prepara la consulta SQL
-    const query = `SELECT * FROM restaurants WHERE ${conditions}`;
+    const query = `SELECT * FROM restaurante WHERE ${conditions}`;
     
     // Ejecuta la consulta con los parámetros dinámicos
     const result = await pool.query(query, values);
@@ -284,7 +284,7 @@ app.get('/restaurants/filter_by_price', async (req, res) => {
   try {
     // Realiza la consulta a la base de datos usando `pool`
     const result = await pool.query(
-      'SELECT * FROM restaurants WHERE price_level = $1',
+      'SELECT * FROM restaurante WHERE price_level = $1',
       [priceLevel]
     );
 
@@ -316,7 +316,7 @@ app.get('/restaurants/search', async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT * FROM restaurants 
+      `SELECT * FROM restaurante 
        WHERE type_of_food ILIKE $1 
           OR name ILIKE $2`,
       [`%${query}%`, `%${query}%`]
