@@ -193,14 +193,17 @@ app.get('/menu_items/:restaurant_id', async (req, res) => {
 
 // Obtener todos los restaurantes
 app.get('/restaurantes', async (req, res) => {
+  console.log('Fetching all restaurants');
   try {
     const result = await pool.query('SELECT * FROM restaurante');
-    res.status(200).json(result.rows); // Devuelve todos los restaurantes en formato JSON
+    console.log('Restaurants fetched:', result.rows);
+    res.status(200).json(result.rows);
   } catch (err) {
     console.error('Error fetching restaurants:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 
@@ -240,7 +243,7 @@ app.get('/restaurante', async (req, res) => {
 
 app.get('/restaurantes/populares', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM restaurante WHERE EsPopular = true');
+    const result = await pool.query('SELECT * FROM restaurante WHERE "EsPopular" = true');
     res.json(result.rows);
   } catch (err) {
     console.error('Error retrieving popular brands:', err.message);
