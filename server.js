@@ -191,22 +191,6 @@ app.get('/menu_items/:restaurant_id', async (req, res) => {
 });
 
 
-// Obtener todos los restaurantes
-app.get('/restaurantes', async (req, res) => {
-  console.log('Fetching all restaurants');
-  try {
-    const result = await pool.query('SELECT * FROM restaurante');
-    console.log('Restaurants fetched:', result.rows);
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error('Error fetching restaurants:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
-
 
 // Obtener los restaurantes filtrados por país
 app.get('/restaurante', async (req, res) => {
