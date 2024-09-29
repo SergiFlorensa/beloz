@@ -193,7 +193,7 @@ app.get('/menu_items/:restaurant_id', async (req, res) => {
 
 
 // Obtener los restaurantes filtrados por país
-app.get('/restaurants', async (req, res) => {
+app.get('/restaurante', async (req, res) => {
   const country = req.query.country;
 
   let query = 'SELECT * FROM restaurante';
@@ -227,7 +227,7 @@ app.get('/restaurants', async (req, res) => {
 
 app.get('/restaurantes/populares', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM restaurante WHERE "EsPopular" = true');
+    const result = await pool.query('SELECT * FROM restaurante WHERE EsPopular = true');
     res.json(result.rows);
   } catch (err) {
     console.error('Error retrieving popular brands:', err.message);
