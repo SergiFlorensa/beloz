@@ -303,7 +303,6 @@ app.get('/restaurants/filter_by_price', async (req, res) => {
 });
 
 
-
 app.get('/restaurants/search', async (req, res) => {
   const { query } = req.query;
 
