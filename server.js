@@ -19,7 +19,6 @@ app.use('/images', express.static(path.join(__dirname, 'public/images')));
 require('dotenv').config();
 
 
-
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
