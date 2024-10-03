@@ -1,4 +1,4 @@
-/*const express = require('express');
+const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -223,7 +223,7 @@ app.get('/restaurante', async (req, res) => {
   }
 });
 */
-/*
+
 app.get('/restaurantes/populares', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM restaurante WHERE "EsPopular" = true');
@@ -339,11 +339,11 @@ app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
 
-*/
+
 
 
 // server.js
-
+/*
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -407,3 +407,4 @@ app.get('/profile', (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+*/
