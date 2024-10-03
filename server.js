@@ -226,7 +226,7 @@ app.get('/restaurante', async (req, res) => {
 
 app.get('/restaurantes/populares', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM restaurante WHERE "EsPopular" = true');
+    const result = await pool.query('SELECT * FROM restaurante WHERE es_popular = true');
     res.json(result.rows);
   } catch (err) {
     console.error('Error retrieving popular brands:', err.message);
