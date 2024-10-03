@@ -367,7 +367,7 @@ app.use(errorHandler);
 // Configurar el servidor para servir archivos estáticos
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
-const pool = require('./models/db');
+const pool = require('./models/dbpostgre');
 
 // Configuración de sesiones (si aún la necesitas)
 app.use(session({
