@@ -1,4 +1,4 @@
-const pool = require('../models/db');
+const pool = require('../models/dbpostgre');
 
 // Obtener todos los platos
 exports.getAllPlatos = async (req, res) => {
