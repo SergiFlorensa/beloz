@@ -1,39 +1,19 @@
-const pool = require('../models/dbpostgre');
+const pool = require('../models/dbpostgre'); // Asegúrate de tener bien configurada la conexión a la base de datos
 
-// Obtener todos los platos
-exports.getAllPlatos = async (req, res) => {
+// Función para obtener platos por ID de restaurante
+const getPlatosByRestauranteId = async (req, res) => {
+  const { restauranteId } = req.params;
+
   try {
-    const result = await pool.query('SELECT * FROM platos');
+    const result = await pool.query('SELECT * FROM platos WHERE restauranteId = $1', [restauranteId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'No se encontraron platos para el restaurante especificado.' });
+    }
     res.status(200).json(result.rows);
-  } catch (err) {
-    console.error('Error fetching platos:', err.message);
+  } catch (error) {
+    console.error('Error fetching platos:', error);
     res.status(500).json({ error: 'Error fetching platos' });
   }
 };
 
-// Obtener un plato por ID
-exports.getPlatoById = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await pool.query('SELECT * FROM platos WHERE id = $1', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Plato no encontrado' });
-    }
-    res.status(200).json(result.rows[0]);
-  } catch (err) {
-    console.error('Error fetching plato:', err.message);
-    res.status(500).json({ error: 'Error fetching plato' });
-  }
-};
-
-// Obtener platos por ID de restaurante
-exports.getPlatosByRestaurantId = async (req, res) => {
-    const { restaurantId } = req.query;
-    try {
-      const result = await pool.query('SELECT * FROM platos WHERE restaurantid = $1', [restaurantId]);
-      res.status(200).json(result.rows);
-    } catch (err) {
-      console.error('Error fetching platos:', err.message);
-      res.status(500).json({ error: 'Error fetching platos' });
-    }
-  };
+module.exports = { getPlatosByRestauranteId };

@@ -1,4 +1,4 @@
-const express = require('express');
+/*const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -213,7 +213,7 @@ app.get('/restaurante', async (req, res) => {
 });
 
 
-/*app.get('/popular_brands', async (req, res) => {
+app.get('/popular_brands', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM "public.popular_brands"');
     res.json(result.rows);
@@ -222,7 +222,7 @@ app.get('/restaurante', async (req, res) => {
     res.status(500).send('Error retrieving data from database');
   }
 });
-*/
+
 
 app.get('/restaurantes/populares', async (req, res) => {
   try {
@@ -338,38 +338,33 @@ app.get('/restaurants/search', async (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-
+*/
 
 
 
 // server.js
-/*
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const session = require('express-session');
-const path = require('path'); // Importa path para servir archivos estáticos
-const dotenv = require('dotenv');
-const errorHandler = require('./middleware/errorHandler');
-
-
+const path = require('path');
+require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-dotenv.config();
+const authRoutes = require('./routes/authRoutes');
+const restauranteRoutes = require('./routes/restauranteRoutes');
+const platosRoutes = require('./routes/platosRoutes'); // Asegúrate de que este archivo exista
 
 app.use(bodyParser.json());
 app.use(cors());
-app.use(errorHandler);
-
 
 // Configurar el servidor para servir archivos estáticos
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
-const pool = require('./models/dbpostgre');
-
-// Configuración de sesiones (si aún la necesitas)
+// Configuración de sesiones
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your_session_secret',
   resave: false,
@@ -377,34 +372,11 @@ app.use(session({
   cookie: { secure: false } // Cambia a `true` en producción con HTTPS
 }));
 
-// Importar y usar las rutas
-const restauranteRoutes = require('./routes/restauranteRoutes');
-const usersRoutes = require('./routes/usersRoutes');
-const platosRoutes = require('./routes/platosRoutes');
-const menuRoutes = require('./routes/menuRoutes');
-
-
-
+// Usar rutas importadas
+app.use('/api/auth', authRoutes);
 app.use('/api/restaurantes', restauranteRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/platos', platosRoutes);
-app.use('/api/menu', menuRoutes);
-// Ejemplos de otros endpoints pueden ser definidos en sus respectivas rutas
+app.use('/api/platos', platosRoutes); // Asegúrate de que esta ruta esté configurada
 
-// Ruta protegida de ejemplo
-app.get('/profile', (req, res) => {
-  // Este endpoint ahora está manejado por usersRoutes.js
-});
-
-
-
-
-
-
-
-
-// Iniciar el servidor
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-*/
