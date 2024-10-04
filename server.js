@@ -1,10 +1,11 @@
-/*const express = require('express');
+const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { Pool } = require('pg');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+/*
 const path = require('path'); // Importa path para servir archivos estáticos
 
 const app = express();
@@ -337,7 +338,7 @@ app.get('/restaurants/search', async (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-*/
+
 
 
 
@@ -350,6 +351,7 @@ const { Pool } = require('pg');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+*/
 const path = require('path'); // Importa path para servir archivos estáticos
 
 require('dotenv').config();
