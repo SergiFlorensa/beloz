@@ -3,7 +3,7 @@ const {
   getAllRestaurantes,
   getRestaurantesByCountry,
   getRestaurantesPopulares,
-  getRestaurantesByPriceLevel,
+  getRestaurantesPorNivelPrecio ,
   getRestaurantesByTypeOfFood,
   searchRestaurantes
 } = require('../controllers/restauranteController');
@@ -20,7 +20,6 @@ router.get('/populares', getRestaurantesPopulares);
 
 // Filtrar restaurantes por nivel de precio
 router.get('/filter_by_price', getRestaurantesPorNivelPrecio);
-
 // Filtrar restaurantes por tipos de comida
 router.get('/filter', getRestaurantesByTypeOfFood);
 
