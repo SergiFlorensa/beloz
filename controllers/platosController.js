@@ -1,19 +1,17 @@
-const pool = require('../models/dbpostgre'); // Asegúrate de tener bien configurada la conexión a la base de datos
+const pool = require('../models/dbpostgre');
 
-// Función para obtener platos por ID de restaurante
-const getPlatosByRestauranteId = async (req, res) => {
-  const { restauranteId } = req.params;
+// Obtener platos por ID de restaurante
+exports.getPlatosByRestauranteId = async (req, res) => {
+  const { restaurantId } = req.query;
 
   try {
-    const result = await pool.query('SELECT * FROM platos WHERE restauranteId = $1', [restauranteId]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'No se encontraron platos para el restaurante especificado.' });
-    }
-    res.status(200).json(result.rows);
+    const result = await pool.query(
+      'SELECT * FROM platos WHERE restauranteId = $1',
+      [restaurantId]
+    );
+    res.json(result.rows);
   } catch (error) {
     console.error('Error fetching platos:', error);
-    res.status(500).json({ error: 'Error fetching platos' });
+    res.status(500).send('Error fetching platos');
   }
 };
-
-module.exports = { getPlatosByRestauranteId };

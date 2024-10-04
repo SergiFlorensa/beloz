@@ -1,12 +1,30 @@
 const express = require('express');
+const {
+  getAllRestaurantes,
+  getRestaurantesByCountry,
+  getRestaurantesPopulares,
+  getRestaurantesByPriceLevel,
+  getRestaurantesByTypeOfFood,
+  searchRestaurantes
+} = require('../controllers/restauranteController');
 const router = express.Router();
 
-// Asegúrate de que la ruta y el nombre del archivo sean correctos
-const restauranteController = require('../controllers/restauranteController');
+// Obtener todos los restaurantes
+router.get('/', getAllRestaurantes);
 
-// Usando las funciones del controlador
-router.get('/', restauranteController.getRestaurantes);
-router.get('/populares', restauranteController.getRestaurantesPopulares);
-// Añade otras rutas según sea necesario
+// Obtener restaurantes filtrados por país
+router.get('/country', getRestaurantesByCountry);
+
+// Obtener restaurantes populares
+router.get('/populares', getRestaurantesPopulares);
+
+// Filtrar restaurantes por nivel de precio
+router.get('/filter_by_price', getRestaurantesByPriceLevel);
+
+// Filtrar restaurantes por tipos de comida
+router.get('/filter', getRestaurantesByTypeOfFood);
+
+// Buscar restaurantes por nombre o tipo de comida
+router.get('/search', searchRestaurantes);
 
 module.exports = router;

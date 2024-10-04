@@ -1,7 +1,8 @@
-const pool = require('../models/dbpostgre');
+const pool = require('../models//dbpostgre'); // Asegúrate de que db.js está configurado correctamente
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+// Registro de usuario
 exports.register = async (req, res) => {
   const { name, surname, email, password } = req.body;
   try {
@@ -9,13 +10,11 @@ exports.register = async (req, res) => {
     if (userResult.rows.length > 0) {
       return res.status(400).json({ error: 'Email already registered' });
     }
-
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
       'INSERT INTO users (name, surname, email, password) VALUES ($1, $2, $3, $4) RETURNING *',
       [name, surname, email, hashedPassword]
     );
-
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error:', err.message);
@@ -23,6 +22,7 @@ exports.register = async (req, res) => {
   }
 };
 
+// Inicio de sesión
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -32,12 +32,18 @@ exports.login = async (req, res) => {
       const match = await bcrypt.compare(password, user.password);
       if (match) {
         const token = jwt.sign({ id: user.id_user }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        return res.status(200).json({ token, name: user.name, surname: user.surname, email: user.email });
+        res.status(200).json({
+          id_user: user.id_user,
+          token,
+          name: user.name,
+          surname: user.surname,
+          email: user.email
+        });
       } else {
-        return res.status(400).json({ error: 'Invalid credentials' });
+        res.status(400).json({ error: 'Invalid credentials' });
       }
     } else {
-      return res.status(400).json({ error: 'Invalid credentials' });
+      res.status(400).json({ error: 'Invalid credentials' });
     }
   } catch (err) {
     console.error('Error:', err.message);

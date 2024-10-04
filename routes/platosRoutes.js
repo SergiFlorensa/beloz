@@ -1,8 +1,7 @@
 const express = require('express');
-const router = express.Router();
 const { getPlatosByRestauranteId } = require('../controllers/platosController');
+const router = express.Router();
 
-// Definir las rutas
-router.get('/:restauranteId', getPlatosByRestauranteId);
+router.get('/', getPlatosByRestauranteId);
 
 module.exports = router;
