@@ -357,7 +357,6 @@ require('dotenv').config();
 const app = express();
 const port = 3000;
 
-
 const authRoutes = require('./routes/authRoutes');
 const restauranteRoutes = require('./routes/restauranteRoutes');
 const platosRoutes = require('./routes/platosRoutes'); // Asegúrate de que este archivo exista
