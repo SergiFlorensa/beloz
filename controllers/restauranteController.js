@@ -3,22 +3,30 @@ const pool = require('../models/dbpostgre');
 // Obtener restaurantes filtrados por país
 exports.getRestaurantesByCountry = async (req, res) => {
   const country = req.query.country;
-  let query = 'SELECT * FROM restaurante';
-  const params = [];
 
-  if (country) {
-    query += ' WHERE country = $1';
-    params.push(country);
+  console.log('País recibido:', country); // Verifica que el país se está recibiendo correctamente
+
+  if (!country) {
+    return res.status(400).json({ error: 'El país es requerido' });
   }
 
   try {
-    const result = await pool.query(query, params);
+    const result = await pool.query('SELECT * FROM restaurante WHERE country = $1', [country]);
+
+    console.log('Resultados:', result.rows); // Verifica si se devuelven resultados
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'No se encontraron restaurantes para el país especificado.' });
+    }
+
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error('Error al cargar restaurantes por país:', err.message);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
+
 
 // Obtener restaurantes populares
 exports.getRestaurantesPopulares = async (req, res) => {
@@ -43,24 +51,28 @@ exports.getAllRestaurantes = async (req, res) => {
 };
 
 // Filtrar restaurantes por nivel de precio
-exports.getRestaurantesByPriceLevel = async (req, res) => {
+// Controlador para obtener restaurantes filtrados por nivel de precio
+exports.getRestaurantesPorNivelPrecio = async (req, res) => {
   const { priceLevel } = req.query;
 
   if (!priceLevel) {
-    return res.status(400).json({ error: 'Price level is required' });
+    return res.status(400).json({ error: 'El nivel de precio es requerido' });
   }
 
   try {
     const result = await pool.query('SELECT * FROM restaurante WHERE price_level = $1', [priceLevel]);
+
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'No restaurants found for the given price level' });
+      return res.status(404).json({ error: 'No se encontraron restaurantes para el nivel de precio especificado.' });
     }
+
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error('Error al cargar restaurantes:', err.message); // Loguea el error
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 
 
 // Filtrar restaurantes por tipos de comida
