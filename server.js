@@ -334,7 +334,6 @@ app.get('/restaurants/search', async (req, res) => {
 
 
 
-
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
@@ -347,8 +346,12 @@ app.listen(port, () => {
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const { Pool } = require('pg');
 const session = require('express-session');
-const path = require('path');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const path = require('path'); // Importa path para servir archivos estáticos
+
 require('dotenv').config();
 
 const app = express();
@@ -370,7 +373,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your_session_secret',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false } // Cambia a `true` en producción con HTTPS
+  cookie: { secure: true } // Cambia a `true` en producción con HTTPS
 }));
 
 // Usar rutas importadas
