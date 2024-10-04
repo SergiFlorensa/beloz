@@ -19,7 +19,7 @@ router.get('/country', getRestaurantesByCountry);
 router.get('/populares', getRestaurantesPopulares);
 
 // Filtrar restaurantes por nivel de precio
-router.get('/filter_by_price', getRestaurantesByPriceLevel);
+router.get('/filter_by_price', getRestaurantesPorNivelPrecio);
 
 // Filtrar restaurantes por tipos de comida
 router.get('/filter', getRestaurantesByTypeOfFood);
