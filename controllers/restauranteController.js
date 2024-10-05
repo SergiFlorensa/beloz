@@ -45,10 +45,11 @@ exports.getAllRestaurantes = async (req, res) => {
     const result = await pool.query('SELECT * FROM restaurante');
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error('Error en getAllRestaurantes:', err); // Log detallado
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 
 // Filtrar restaurantes por nivel de precio
 // Controlador para obtener restaurantes filtrados por nivel de precio

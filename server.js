@@ -1,11 +1,11 @@
-const express = require('express');
+/*const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { Pool } = require('pg');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-/*
+
 const path = require('path'); // Importa path para servir archivos estáticos
 
 const app = express();
@@ -339,7 +339,7 @@ app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
 
-
+*/
 
 
 // server.js
@@ -351,14 +351,13 @@ const { Pool } = require('pg');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-*/
+
 const path = require('path'); // Importa path para servir archivos estáticos
 
 require('dotenv').config();
 
 const app = express();
-const port = 3000;
-
+const port = process.env.PORT || 3000;
 const authRoutes = require('./routes/authRoutes');
 const restauranteRoutes = require('./routes/restauranteRoutes');
 const platosRoutes = require('./routes/platosRoutes'); // Asegúrate de que este archivo exista
@@ -374,13 +373,16 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your_session_secret',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: true } // Cambia a `true` en producción con HTTPS
+  cookie: { secure: false } // Cambia a `true` en producción con HTTPS
 }));
 
 // Usar rutas importadas
 app.use('/api/auth', authRoutes);
 app.use('/api/restaurantes', restauranteRoutes);
 app.use('/api/platos', platosRoutes); // Asegúrate de que esta ruta esté configurada
+
+
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

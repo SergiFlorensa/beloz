@@ -1,17 +1,29 @@
 const pool = require('../models/dbpostgre');
 
-// Obtener platos por ID de restaurante
-exports.getPlatosByRestauranteId = async (req, res) => {
-  const { restaurantId } = req.query;
+// Controlador para obtener platos por ID de restaurante
+exports.getPlatosPorRestaurante = async (req, res) => {
+  const restauranteId = req.query.restauranteId;
+
+  if (!restauranteId) {
+    return res.status(400).json({ error: 'El ID del restaurante es requerido' });
+  }
 
   try {
     const result = await pool.query(
-      'SELECT * FROM platos WHERE restauranteId = $1',
-      [restaurantId]
+      `SELECT id, name, description, price, image_path, restaurantid AS restaurante_id
+       FROM platos
+       WHERE restaurantid = $1`,
+      [restauranteId]
     );
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching platos:', error);
-    res.status(500).send('Error fetching platos');
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'No se encontraron platos para el restaurante especificado.' });
+    }
+
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Error al cargar platos:', err.message);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
