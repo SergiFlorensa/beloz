@@ -101,10 +101,11 @@ exports.getRestaurantesFiltradosPorTipos = async (req, res) => {
 
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error('Error al filtrar restaurantes:', err);
+    res.status(500).json({ error: 'Error interno del servidor', details: err.message });
   }
 };
+
 
 // Buscar restaurantes por nombre o tipo de comida
 exports.searchRestaurantes = async (req, res) => {
