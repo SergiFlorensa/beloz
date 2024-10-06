@@ -4,7 +4,7 @@ const cors = require('cors');
 const session = require('express-session');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/usersRoutes');
+const usersRoutes = require('./routes/usersRoutes');
 
 dotenv.config();
 
