@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+/*const jwt = require('jsonwebtoken');
 const pool = require('../models/dbpostgre');
 
 // Actualizar correo electrónico
@@ -43,3 +43,4 @@ exports.getProfile = async (req, res) => {
     res.status(401).json({ error: 'Token inválido' });
   }
 };
+*/

@@ -1,4 +1,4 @@
-const express = require('express');
+/*const express = require('express');
 const usersController = require('../controllers/usersController');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -11,3 +11,4 @@ router.put('/update-email', authMiddleware.verifyToken, usersController.updateUs
 router.get('/profile', authMiddleware.verifyToken, usersController.getProfile);
 
 module.exports = router;
+*/
