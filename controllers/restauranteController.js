@@ -78,7 +78,7 @@ exports.getRestaurantesPorNivelPrecio = async (req, res) => {
 
 
 // Filtrar restaurantes por tipos de comida
-exports.getRestaurantesByTypeOfFood = async (req, res) => {
+exports.getRestaurantesFiltradosPorTipos = async (req, res) => {
   const types = req.query.types;
 
   if (!types) {

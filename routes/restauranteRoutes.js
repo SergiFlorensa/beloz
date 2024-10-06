@@ -4,7 +4,7 @@ const {
   getRestaurantesByCountry,
   getRestaurantesPopulares,
   getRestaurantesPorNivelPrecio ,
-  getRestaurantesByTypeOfFood,
+  getRestaurantesFiltradosPorTipos,
   searchRestaurantes
 } = require('../controllers/restauranteController');
 const router = express.Router();
@@ -21,7 +21,7 @@ router.get('/populares', getRestaurantesPopulares);
 // Filtrar restaurantes por nivel de precio
 router.get('/filter_by_price', getRestaurantesPorNivelPrecio);
 // Filtrar restaurantes por tipos de comida
-router.get('/filter', getRestaurantesByTypeOfFood);
+router.get('/filter', getRestaurantesFiltradosPorTipos);
 
 // Buscar restaurantes por nombre o tipo de comida
 router.get('/search', searchRestaurantes);
