@@ -4,7 +4,7 @@ const cors = require('cors');
 const session = require('express-session');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
-//const usersRoutes = require('./routes/usersRoutes');
+const restaurantesRoutes = require('./routes/restauranteRoutes'); // Asegúrate de importar las rutas correctas
 
 dotenv.config();
 
@@ -24,7 +24,7 @@ app.use(session({
 
 // Configurar rutas
 app.use('/api/auth', authRoutes); // Rutas de autenticación
-//app.use('/api/users', usersRoutes); // Rutas de usuario
+app.use('/api/restaurantes', restaurantesRoutes);
 
 // Manejo de errores
 app.use((err, req, res, next) => {
