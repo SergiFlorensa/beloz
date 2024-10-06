@@ -1,5 +1,3 @@
-// routes/usersRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const usersController = require('../controllers/usersController');
@@ -13,9 +11,6 @@ router.post('/login', usersController.loginUser);
 
 // Actualizar correo electrónico (ruta protegida)
 router.put('/update-email', authMiddleware.verifyToken, usersController.updateUserEmail);
-
-// Verificar existencia de correo electrónico
-router.get('/check-email', usersController.checkEmail);
 
 // Obtener perfil del usuario (ruta protegida)
 router.get('/profile', authMiddleware.verifyToken, usersController.getProfile);
