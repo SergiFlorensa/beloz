@@ -1,21 +1,18 @@
-// middleware/authMiddleware.js
-
 const jwt = require('jsonwebtoken');
 
-exports.verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1]; // Asume que el token se envía en el encabezado Authorization como "Bearer TOKEN"
-  
+const verifyToken = (req, res, next) => {
+  const token = req.headers['authorization'];
   if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
+    return res.status(403).json({ error: 'No se proporcionó un token' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key', (err, decoded) => {
-    if (err) {
-      console.error('Token verification error:', err.message);
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-
-    req.user = decoded; // Puedes acceder al usuario en los controladores mediante `req.user`
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // Guardar la info del usuario en req.user
     next();
-  });
+  } catch (err) {
+    return res.status(401).json({ error: 'Token no válido' });
+  }
 };
+
+module.exports = verifyToken;
