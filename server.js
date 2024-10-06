@@ -5,6 +5,7 @@ const session = require('express-session');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const restaurantesRoutes = require('./routes/restauranteRoutes'); // Asegúrate de importar las rutas correctas
+const path = require('path');
 
 dotenv.config();
 
@@ -13,6 +14,9 @@ const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 app.use(cors());
+
+
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 // Configuración de sesiones
 app.use(session({
