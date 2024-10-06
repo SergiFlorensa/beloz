@@ -3,11 +3,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const session = require('express-session');
 const dotenv = require('dotenv');
-const path = require('path');
-
-// Importar rutas
-const authRoutes = require('./routes/authRoutes'); // Importa las rutas de autenticación
-const restaurantesRoutes = require('./routes/restauranteRoutes'); // Importa las rutas de restaurantes
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 dotenv.config();
 
@@ -26,8 +23,8 @@ app.use(session({
 }));
 
 // Configurar rutas
-app.use('/api/auth', authRoutes); // Configura las rutas de autenticación
-app.use('/api/restaurantes', restaurantesRoutes); // Configura las rutas para restaurantes
+app.use('/api/auth', authRoutes); // Rutas de autenticación
+app.use('/api/users', userRoutes); // Rutas de usuario
 
 // Manejo de errores
 app.use((err, req, res, next) => {
