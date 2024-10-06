@@ -7,6 +7,7 @@ const path = require('path');
 
 // Importar rutas
 const authRoutes = require('./routes/authRoutes'); // Importa las rutas de autenticación
+const restaurantesRoutes = require('./routes/restaurantesRoutes');
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use(session({
 
 // Configurar rutas
 app.use('/api/auth', authRoutes); // Configura las rutas de autenticación
+app.use('/api/restaurantes', restaurantesRoutes); // Configura las rutas para restaurantes
 
 // Manejo de errores
 app.use((err, req, res, next) => {
