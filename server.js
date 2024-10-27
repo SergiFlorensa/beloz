@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const restaurantesRoutes = require('./routes/restauranteRoutes'); // Asegúrate de importar las rutas correctas
 const path = require('path');
 const platosRoutes = require('./routes/platosRoutes');
+const authenticateToken = require('./middleware/authenticateToken');
 
 dotenv.config();
 
