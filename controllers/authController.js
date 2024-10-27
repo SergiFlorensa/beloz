@@ -24,6 +24,12 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ error: 'Email ya registrado' });
     }
 
+    // Verifica si el número de teléfono ya está registrado
+    const phoneResult = await pool.query('SELECT * FROM users WHERE num_telefono = $1', [num_telefono]);
+    if (phoneResult.rows.length > 0) {
+      return res.status(400).json({ error: 'El número de teléfono ya está registrado' });
+    }
+
     // Hashea la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -33,10 +39,12 @@ exports.registerUser = async (req, res) => {
       [name, surname, email, hashedPassword, num_telefono]
     );
 
-    // Responde con el usuario creado
-    res.status(201).json(result.rows[0]);
+     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error durante el registro:', err);
+    if (err.code === '23505') { // Código de error para violación de restricción única en PostgreSQL
+      return res.status(400).json({ error: 'El número de teléfono ya está registrado' });
+    }
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -156,28 +164,44 @@ exports.updatePassword = async (req, res) => {
   }
 };
 
-// authController.js
+// Actualizar número de teléfono
 exports.updatePhoneNumber = async (req, res) => {
-  const { num_telefono } = req.body;
-  const userId = req.user.id_user;
+  const { userId, num_telefono } = req.body;
 
-  if (!num_telefono) {
-    return res.status(400).json({ error: 'El número de teléfono es obligatorio' });
+  if (!userId || !num_telefono) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
   }
 
-  // Validación del número de teléfono
-  if (!/^\d{9}$/.test(num_telefono)) {
-    return res.status(400).json({ error: 'El número de teléfono debe tener exactamente 9 dígitos numéricos' });
+  // Verifica que num_telefono tenga 9 dígitos
+  if (num_telefono.length !== 9 || !/^\d+$/.test(num_telefono)) {
+    return res.status(400).json({ error: 'El número de teléfono debe tener 9 dígitos' });
   }
 
   try {
-    await pool.query('UPDATE users SET num_telefono = $1 WHERE id_user = $2', [num_telefono, userId]);
-    res.status(200).json({ message: 'Número de teléfono actualizado correctamente' });
+    // Verifica si el número de teléfono ya está registrado por otro usuario
+    const phoneResult = await pool.query(
+      'SELECT * FROM users WHERE num_telefono = $1 AND id_user != $2',
+      [num_telefono, userId]
+    );
+    if (phoneResult.rows.length > 0) {
+      return res.status(400).json({ error: 'El número de teléfono ya está registrado por otro usuario' });
+    }
+
+    const result = await pool.query(
+      'UPDATE users SET num_telefono = $1 WHERE id_user = $2 RETURNING *',
+      [num_telefono, userId]
+    );
+
+    res.status(200).json(result.rows[0]);
   } catch (err) {
     console.error('Error al actualizar el número de teléfono:', err);
+    if (err.code === '23505') {
+      return res.status(400).json({ error: 'El número de teléfono ya está registrado' });
+    }
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 
 
 
