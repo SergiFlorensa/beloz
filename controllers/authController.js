@@ -4,7 +4,7 @@ const pool = require('../models/dbpostgre');
 
 // Registrar usuario
 exports.registerUser = async (req, res) => {
-  const { name, surname, email, password, num_telefono } = req.body;
+  const { name, surname, email,  num_telefono, password } = req.body;
 
   if (!name || !surname || !email || !password || !num_telefono) {
     return res.status(400).json({ error: 'Todos los campos son obligatorios' });
@@ -23,8 +23,8 @@ exports.registerUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO users (name, surname, email, password, num_telefono) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [name, surname, email, hashedPassword, num_telefono]
+      'INSERT INTO users (name, surname, email, num_telefono, password ) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, surname, email, num_telefono, hashedPassword]
     );
 
     res.status(201).json(result.rows[0]);
