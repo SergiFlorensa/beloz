@@ -22,4 +22,6 @@ router.post('/logout', authenticateToken, logoutUser);
 // Actualizar correo electrónico
 router.post('/update_email', authenticateToken, updateEmail);
 
+router.post('/update_password', authenticateToken, updatePassword);
+
 module.exports = router;

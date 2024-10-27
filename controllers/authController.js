@@ -110,6 +110,40 @@ exports.updateEmail = async (req, res) => {
 };
 
 
+// Actualizar contraseña
+exports.updatePassword = async (req, res) => {
+  const { current_password, new_password } = req.body;
+  const userId = req.user.id_user; // Obtenemos el ID del usuario autenticado
+
+  if (!current_password || !new_password) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+  }
+
+  try {
+    // Obtener el usuario actual
+    const userResult = await pool.query('SELECT * FROM users WHERE id_user = $1', [userId]);
+    const user = userResult.rows[0];
+
+    // Verificar que la contraseña actual coincide
+    const isMatch = await bcrypt.compare(current_password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'La contraseña actual es incorrecta' });
+    }
+
+    // Hashear la nueva contraseña
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    // Actualizar la contraseña en la base de datos
+    await pool.query('UPDATE users SET password = $1 WHERE id_user = $2', [hashedPassword, userId]);
+
+    res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
+  } catch (err) {
+    console.error('Error al actualizar la contraseña:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+
 // Logout
 exports.logoutUser = (req, res) => {
   const token = req.headers['authorization']?.split(' ')[1];
