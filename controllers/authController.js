@@ -3,9 +3,11 @@ const jwt = require('jsonwebtoken');
 const pool = require('../models/dbpostgre');
 
 // Registrar usuario
+// Registrar usuario
 exports.registerUser = async (req, res) => {
   const { name, surname, email, password, num_telefono } = req.body;
 
+  // Verifica que todos los campos sean obligatorios
   if (!name || !surname || !email || !password || !num_telefono) {
     return res.status(400).json({ error: 'Todos los campos son obligatorios' });
   }
@@ -16,23 +18,29 @@ exports.registerUser = async (req, res) => {
   }
 
   try {
+    // Verifica si el email ya está registrado
     const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userResult.rows.length > 0) {
       return res.status(400).json({ error: 'Email ya registrado' });
     }
 
+    // Hashea la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Inserta el nuevo usuario en la base de datos
     const result = await pool.query(
       'INSERT INTO users (name, surname, email, password, num_telefono) VALUES ($1, $2, $3, $4, $5) RETURNING *',
       [name, surname, email, hashedPassword, num_telefono]
     );
 
+    // Responde con el usuario creado
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error durante el registro:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 
 // Iniciar sesión
 exports.loginUser = async (req, res) => {
@@ -144,25 +152,6 @@ exports.updatePassword = async (req, res) => {
     res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
   } catch (err) {
     console.error('Error al actualizar la contraseña:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
-
-
-// authController.js
-exports.updatePhoneNumber = async (req, res) => {
-  const { num_telefono } = req.body;
-  const userId = req.user.id_user;
-
-  if (!num_telefono) {
-    return res.status(400).json({ error: 'El número de teléfono es obligatorio' });
-  }
-
-  try {
-    await pool.query('UPDATE users SET num_telefono = $1 WHERE id_user = $2', [num_telefono, userId]);
-    res.status(200).json({ message: 'Número de teléfono actualizado correctamente' });
-  } catch (err) {
-    console.error('Error al actualizar el número de teléfono:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
