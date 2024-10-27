@@ -10,6 +10,11 @@ exports.registerUser = async (req, res) => {
     return res.status(400).json({ error: 'Todos los campos son obligatorios' });
   }
 
+  // Verifica que num_telefono tenga 9 dígitos
+  if (num_telefono.length !== 9 || !/^\d+$/.test(num_telefono)) {
+    return res.status(400).json({ error: 'El número de teléfono debe tener 9 dígitos' });
+  }
+
   try {
     const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userResult.rows.length > 0) {
