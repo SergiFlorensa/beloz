@@ -6,6 +6,7 @@ const {
   logoutUser,
   updateEmail,
   updatePassword,
+  updatePhoneNumber,
 } = require('../controllers/authController');
 const authenticateToken = require('../middleware/authenticateToken');
 
@@ -24,5 +25,8 @@ router.post('/logout', authenticateToken, logoutUser);
 router.post('/update_email', authenticateToken, updateEmail);
 
 router.post('/update_password', authenticateToken, updatePassword);
+
+router.post('/update_phone', authenticateToken, updatePhoneNumber);
+
 
 module.exports = router;
