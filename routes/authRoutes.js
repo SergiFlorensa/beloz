@@ -5,6 +5,7 @@ const {
   loginUser,
   logoutUser,
   updateEmail,
+  updatePassword,
 } = require('../controllers/authController');
 const authenticateToken = require('../middleware/authenticateToken');
 
