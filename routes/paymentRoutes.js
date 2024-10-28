@@ -1,11 +1,12 @@
+// paymentRoutes.js
 const express = require('express');
+const { savePaymentData, getPaymentData } = require('../controllers/PaymentController');
 const router = express.Router();
-const PaymentController = require('../controllers/PaymentController');
 
 // Ruta para guardar los datos de pago
-router.post('/api/payment', paymentController.savePaymentData);
+router.post('/save', savePaymentData);
 
-// Ruta para obtener los datos de pago de un usuario
-router.get('/api/payment/:userId', paymentController.getPaymentData);
+// Ruta para obtener los datos de pago de un usuario por su ID
+router.get('/:userId', getPaymentData);
 
 module.exports = router;
