@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const paymentController = require('./controllers/PaymentController');
+const PaymentController = require('../controllers/PaymentController');
 
 // Ruta para guardar los datos de pago
 router.post('/api/payment', paymentController.savePaymentData);
