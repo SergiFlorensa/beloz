@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const restaurantesRoutes = require('./routes/restauranteRoutes'); // Asegúrate de importar las rutas correctas
 const path = require('path');
 const platosRoutes = require('./routes/platosRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 dotenv.config();
 
@@ -31,6 +32,8 @@ app.use(session({
 app.use('/api/auth', authRoutes); // Rutas de autenticación
 app.use('/api/restaurantes', restaurantesRoutes);
 app.use('/api/platos', platosRoutes);
+app.use('/api/payment', paymentRoutes); 
+
 
 // Manejo de errores
 app.use((err, req, res, next) => {
