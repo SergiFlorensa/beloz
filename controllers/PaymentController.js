@@ -37,21 +37,16 @@ exports.savePaymentData = async (req, res) => {
 // Obtener datos de pago por ID de usuario
 exports.getPaymentData = async (req, res) => {
     const { userId } = req.params;
-
-    if (!userId) {
-        return res.status(400).json({ error: 'El ID de usuario es requerido' });
-    }
-
     try {
         const result = await pool.query('SELECT * FROM datos_bancarios WHERE user_id = $1', [userId]);
-        
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'No se encontraron datos de pago para este usuario.' });
         }
-
+        console.log("Datos de pago recuperados:", result.rows[0]); // Para ver los datos en consola
         res.status(200).json(result.rows[0]);
     } catch (err) {
         console.error('Error al obtener los datos de pago:', err.message);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
+
