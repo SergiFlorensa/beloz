@@ -1,8 +1,11 @@
+const jwt = require('jsonwebtoken');
+
 exports.verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'No se proporcionó un token válido' });
+        console.warn('Token no proporcionado o malformado');
+        return res.status(401).json({ error: 'Token no proporcionado o malformado' });
     }
 
     const token = authHeader.split(' ')[1];
@@ -10,7 +13,7 @@ exports.verifyToken = (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
-        console.log('Token verificado, usuario decodificado:', req.user); // Log adicional
+        console.log('Token verificado con éxito:', req.user);
         next();
     } catch (err) {
         console.error('Error al verificar el token:', err.message);
