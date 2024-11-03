@@ -3,7 +3,7 @@ const pool = require('../models/dbpostgre');
 
 // Controlador para crear un nuevo pedido
 exports.crearPedido = async (req, res) => {
-    const userId = req.session.userId; // Obtener userId desde la sesión
+    const userId = req.user.idUser; // Obtener userId desde el token JWT
     const { restaurantId, detalles } = req.body;
 
     if (!userId || !restaurantId || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
@@ -58,6 +58,7 @@ exports.crearPedido = async (req, res) => {
     }
 };
 
+
 // Controlador para obtener todos los pedidos de un usuario
 exports.getPedidosPorUsuario = async (req, res) => {
     const userId = req.session.userId; // Obtener userId desde la sesión
@@ -85,7 +86,7 @@ exports.getPedidosPorUsuario = async (req, res) => {
 // Controlador para obtener los detalles de un pedido específico
 exports.getDetallePedido = async (req, res) => {
     const pedidoId = req.params.pedidoId;
-    const userId = req.session.userId; // Obtener userId desde la sesión
+    const userId = req.user.idUser; // Obtener userId desde el token JWT
 
     if (!pedidoId) {
         return res.status(400).json({ error: 'El ID del pedido es requerido' });
@@ -107,7 +108,7 @@ exports.getDetallePedido = async (req, res) => {
         // Obtener los detalles del pedido
         const detallesResult = await pool.query(
             `SELECT dp.id_detalle, dp.pedido_id, dp.plato_id, dp.cantidad, dp.precio, p.name AS plato_name
-             FROM detalle_pedidos dp
+             FROM detalle_pedido dp
              JOIN platos p ON dp.plato_id = p.id
              WHERE dp.pedido_id = $1`,
             [pedidoId]
