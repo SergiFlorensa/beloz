@@ -6,29 +6,31 @@ exports.crearPedido = async (req, res) => {
     const userId = req.user.idUser; // Obtener userId desde el token JWT
     const { restaurantId, detalles } = req.body;
 
+    // Log para verificar los datos recibidos
+    console.log('Datos recibidos para crear pedido:', { userId, restaurantId, detalles });
+
     if (!userId || !restaurantId || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
         return res.status(400).json({ error: 'restaurantId y detalles son requeridos.' });
     }
 
-    // Calcular el total del pedido
+    // Log para confirmar el total
     const total = detalles.reduce((acc, detalle) => acc + (detalle.precio * detalle.cantidad), 0);
+    console.log('Total calculado para el pedido:', total);
 
     try {
-        // Iniciar una transacción
         await pool.query('BEGIN');
-
-        // Insertar el pedido
         const pedidoResult = await pool.query(
             `INSERT INTO pedidos (user_id, restaurant_id, total)
              VALUES ($1, $2, $3)
              RETURNING id, fecha`,
             [userId, restaurantId, total]
         );
-
         const pedidoId = pedidoResult.rows[0].id;
         const fecha = pedidoResult.rows[0].fecha;
 
-        // Insertar los detalles del pedido
+        // Log para verificar ID del pedido y fecha obtenida
+        console.log('Pedido creado con ID:', pedidoId, 'Fecha:', fecha);
+
         const detalleInsertPromises = detalles.map(detalle => {
             return pool.query(
                 `INSERT INTO detalle_pedidos (pedido_id, plato_id, cantidad, precio)
@@ -51,7 +53,6 @@ exports.crearPedido = async (req, res) => {
             detalles
         });
     } catch (err) {
-        // Revertir la transacción en caso de error
         await pool.query('ROLLBACK');
         console.error('Error al crear el pedido:', err.message);
         res.status(500).json({ error: 'Error interno del servidor' });
