@@ -1,10 +1,10 @@
 // routes/pedidosRoutes.js
 const express = require('express');
 const router = express.Router();
-const pedidosController = require('../controllers/pedidosController');
-const { verifyToken } = require('../middleware/verifyToken'); // Importa el middleware
+const pedidosController = require('../controllers/pedidosController'); // Asegúrate de que este archivo existe y exporta funciones válidas
+const { verifyToken } = require('../middleware/verifyToken'); // Importar el middleware correctamente
 
-// Ruta para obtener todos los pedidos de un usuario
+// Ruta para obtener todos los pedidos del usuario autenticado
 router.get('/', verifyToken, pedidosController.getPedidosPorUsuario);
 
 // Ruta para crear un nuevo pedido
