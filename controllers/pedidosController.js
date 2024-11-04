@@ -12,7 +12,8 @@ exports.crearPedido = async (req, res) => {
     }
 
     const total = detalles.reduce((acc, detalle) => acc + (detalle.precio * detalle.cantidad), 0);
-
+    console.log('Total calculado para el pedido:', total);
+    
     try {
         await pool.query('BEGIN');
 

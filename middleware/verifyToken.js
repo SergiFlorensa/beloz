@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-
 exports.verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
+
+    console.log('Hora del servidor:', new Date().toISOString());
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         console.warn('Token no proporcionado o malformado');
