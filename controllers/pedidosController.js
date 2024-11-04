@@ -3,7 +3,7 @@ const pool = require('../models/dbpostgre');
 
 // Controlador para crear un nuevo pedido
 exports.crearPedido = async (req, res) => {
-    const userId = req.user?.idUser;
+    const userId = req.user?.id_user;
     const { restaurantId, detalles } = req.body;
 
     if (!userId || !restaurantId || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
@@ -55,7 +55,7 @@ exports.crearPedido = async (req, res) => {
 
 // Controlador para obtener todos los pedidos de un usuario
 exports.getPedidosPorUsuario = async (req, res) => {
-    const userId = req.session.userId; // Obtener userId desde la sesión
+    const userId = req.user?.id_user; // Obtener userId desde la sesión
 
     if (!userId) {
         return res.status(400).json({ error: 'El ID de usuario es requerido' });
@@ -80,7 +80,7 @@ exports.getPedidosPorUsuario = async (req, res) => {
 // Controlador para obtener los detalles de un pedido específico
 exports.getDetallePedido = async (req, res) => {
     const pedidoId = req.params.pedidoId;
-    const userId = req.user.idUser; // Obtener userId desde el token JWT
+    const userId = req.user?.id_user; // Obtener userId desde el token JWT
 
     if (!pedidoId) {
         return res.status(400).json({ error: 'El ID del pedido es requerido' });
