@@ -1,12 +1,13 @@
 const express = require('express');
 const {
     crearPedido,
+    getPedidosPorUsuario,
 } = require('../controllers/pedidosController');
 
 const router = express.Router();
 
 // Ruta para obtener todos los pedidos del usuario autenticado
-//router.get('/', getPedidosPorUsuario);
+router.get('/', getPedidosPorUsuario);
 
 // Ruta para crear un nuevo pedido
 router.post('/crear', crearPedido);

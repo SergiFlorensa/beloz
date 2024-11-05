@@ -33,3 +33,31 @@ exports.crearPedido = async (req, res) => {
         res.status(500).json({ error: 'Error al crear el pedido', details: err.message });
     }
 };
+
+
+
+exports.getPedidosPorUsuario = async (req, res) => {
+    const userId = req.query.user_id; // Obtenemos el ID del usuario desde los parámetros de consulta
+
+    if (!userId) {
+        return res.status(400).json({ error: 'El ID del usuario es requerido' });
+    }
+
+    try {
+        // Consulta para obtener los pedidos del usuario
+        const result = await pool.query(
+            `SELECT * FROM pedidos WHERE user_id = $1 ORDER BY fecha DESC`,
+            [userId]
+        );
+        
+        // Si no hay pedidos, retorna un mensaje
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'No se encontraron pedidos para este usuario' });
+        }
+
+        res.status(200).json(result.rows);
+    } catch (err) {
+        console.error('Error al obtener pedidos del usuario:', err.message);
+        res.status(500).json({ error: 'Error interno del servidor', details: err.message });
+    }
+};
