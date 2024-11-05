@@ -24,7 +24,7 @@ exports.crearPedido = async (req, res) => {
         const detalleInsertPromises = detalles.map(detalle => {
             console.log("Insertando detalle:", detalle); // Muestra cada detalle antes de insertar
             return pool.query(
-                `INSERT INTO detalle_pedidos (pedido_id, plato_id, cantidad, precio) VALUES ($1, $2, $3, $4)`,
+                `INSERT INTO detalle_pedido (pedido_id, plato_id, cantidad, precio) VALUES ($1, $2, $3, $4)`,
                 [pedidoId, detalle.platoId, detalle.cantidad, detalle.precio]
             );
         });
