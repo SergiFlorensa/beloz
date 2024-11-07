@@ -3,14 +3,16 @@ const pool = require('../models/dbpostgre');
 exports.crearPedido = async (req, res) => {
     const { userId, restaurantId, detalles } = req.body;
 
+    // Verifica que los campos necesarios están presentes
     if (!userId || !restaurantId || !detalles || !Array.isArray(detalles) || detalles.length === 0) {
         return res.status(400).json({ error: 'Datos incompletos para crear el pedido.' });
     }
 
+    // Calcular el total basado en los detalles proporcionados
     const total = detalles.reduce((acc, detalle) => acc + (detalle.precio * detalle.cantidad), 0);
 
     try {
-        // Iniciar transacción
+        // Iniciar una transacción
         await pool.query('BEGIN');
 
         // Insertar el pedido en la tabla `pedidos`
@@ -19,37 +21,36 @@ exports.crearPedido = async (req, res) => {
              VALUES ($1, $2, NOW(), $3) RETURNING id`,
             [userId, restaurantId, total]
         );
-        
+
+        // Obtener el id del pedido recién creado
         const pedidoId = pedidoResult.rows[0].id;
 
-        // Insertar detalles del pedido en la tabla `detalle_pedido`
-        const detallePromises = detalles.map(detalle => {
-            return pool.query(
+        // Insertar cada detalle en la tabla `detalle_pedido`
+        for (const detalle of detalles) {
+            await pool.query(
                 `INSERT INTO detalle_pedido (pedido_id, plato_id, cantidad, precio) 
                  VALUES ($1, $2, $3, $4)`,
                 [pedidoId, detalle.platoId, detalle.cantidad, detalle.precio]
             );
-        });
+        }
 
-        // Ejecutar todas las inserciones de detalle
-        await Promise.all(detallePromises);
-
-        // Confirmar transacción
+        // Confirmar la transacción
         await pool.query('COMMIT');
 
-        // Responder con el pedido creado
+        // Responder con los datos del pedido creado
         res.status(201).json({
             id: pedidoId,
             fecha: new Date().toISOString(),
             total: total
         });
     } catch (err) {
-        // Si ocurre un error, revertir la transacción
+        // Si ocurre un error, hacer rollback de la transacción
         await pool.query('ROLLBACK');
         console.error('Error al crear el pedido:', err.message);
         res.status(500).json({ error: 'Error al crear el pedido', details: err.message });
     }
 };
+
 
 
 exports.getPedidosPorUsuario = async (req, res) => {
