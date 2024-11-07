@@ -69,7 +69,7 @@ exports.getDetallePedido = async (req, res) => {
 
     try {
         const result = await pool.query(
-            `SELECT dp.cantidad, dp.precio, p.nombre AS plato_nombre, r.nombre AS restaurante_nombre
+            `SELECT dp.cantidad, dp.precio, p.name AS plato_nombre, r.name AS restaurante_nombre
              FROM detalle_pedido dp
              JOIN platos p ON dp.plato_id = p.id
              JOIN pedidos pe ON dp.pedido_id = pe.id
