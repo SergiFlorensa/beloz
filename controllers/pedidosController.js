@@ -12,6 +12,9 @@ exports.crearPedido = async (req, res) => {
     const total = detalles.reduce((acc, detalle) => acc + (detalle.precio * detalle.cantidad), 0);
 
     try {
+        // Comenzar transacción
+        await pool.query('BEGIN');
+
         // Insertar el pedido en la tabla `pedidos`
         const pedidoResult = await pool.query(
             `INSERT INTO pedidos (user_id, restaurant_id, fecha, total) 
@@ -19,20 +22,38 @@ exports.crearPedido = async (req, res) => {
             [userId, restaurantId, total]
         );
 
-        // Extraer el pedido insertado
+        // Extraer el pedido insertado para obtener el ID
         const pedido = pedidoResult.rows[0];
+        const pedidoId = pedido.id;
+
+        // Insertar cada detalle en `detalle_pedido` asociado al `pedido_id` generado
+        const detalleInsertPromises = detalles.map(detalle => {
+            return pool.query(
+                `INSERT INTO detalle_pedido (pedido_id, plato_id, cantidad, precio) 
+                 VALUES ($1, $2, $3, $4)`,
+                [pedidoId, detalle.platoId, detalle.cantidad, detalle.precio]
+            );
+        });
+
+        // Ejecutar todas las inserciones de detalle en paralelo
+        await Promise.all(detalleInsertPromises);
+
+        // Confirmar la transacción
+        await pool.query('COMMIT');
 
         // Responder con el pedido creado
         res.status(201).json({
-            id: pedido.id,
+            id: pedidoId,
             fecha: pedido.fecha,
             total: pedido.total
         });
     } catch (err) {
+        await pool.query('ROLLBACK'); // Deshace la transacción en caso de error
         console.error('Error al crear el pedido:', err.message);
         res.status(500).json({ error: 'Error al crear el pedido', details: err.message });
     }
 };
+
 
 
 
