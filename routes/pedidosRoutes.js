@@ -13,6 +13,6 @@ router.get('/', getPedidosPorUsuario);
 router.post('/crear', crearPedido);
 
 // Ruta para obtener los detalles de un pedido específico
-//router.get('/:pedidoId', getDetallePedido);
+router.get('/:pedidoId', getDetallePedido);
 
 module.exports = router;

@@ -61,3 +61,29 @@ exports.getPedidosPorUsuario = async (req, res) => {
         res.status(500).json({ error: 'Error interno del servidor', details: err.message });
     }
 };
+
+
+// Obtener los detalles de un pedido
+exports.getDetallePedido = async (req, res) => {
+    const pedidoId = req.params.pedidoId;
+
+    try {
+        const result = await pool.query(`
+            SELECT dp.pedido_id, dp.cantidad, dp.precio, p.name AS plato_nombre, r.name AS restaurante_nombre
+            FROM detalle_pedido dp
+            JOIN platos p ON dp.plato_id = p.id
+            JOIN pedidos pd ON dp.pedido_id = pd.id
+            JOIN restaurante r ON pd.restaurant_id = r.id
+            WHERE dp.pedido_id = $1
+        `, [pedidoId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'No se encontraron detalles para el pedido especificado.' });
+        }
+
+        res.status(200).json(result.rows);
+    } catch (err) {
+        console.error('Error al obtener detalles del pedido:', err.message);
+        res.status(500).json({ error: 'Error al obtener detalles del pedido', details: err.message });
+    }
+};
