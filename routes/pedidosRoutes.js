@@ -2,6 +2,7 @@ const express = require('express');
 const {
     crearPedido,
     getPedidosPorUsuario,
+    getDetallePedido,
 } = require('../controllers/pedidosController');
 
 const router = express.Router();
@@ -14,5 +15,6 @@ router.post('/crear', crearPedido);
 
 // Ruta para obtener los detalles de un pedido específico
 router.get('/:pedidoId', getDetallePedido);
+//router.get('/:pedidoId', getDetallePedido);
 
 module.exports = router;
