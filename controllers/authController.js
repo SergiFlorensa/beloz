@@ -80,6 +80,7 @@ exports.loginUser = async (req, res) => {
       name: user.name,
       surname: user.surname,
       email: user.email,
+      num_telefono: user.num_telefono,
       token,
     });
   } catch (err) {
