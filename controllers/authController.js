@@ -167,10 +167,11 @@ exports.updatePassword = async (req, res) => {
 
 // Actualizar número de teléfono
 exports.updatePhoneNumber = async (req, res) => {
-  const { userId, num_telefono } = req.body;
+  const { num_telefono } = req.body;
+  const userId = req.user.id_user; // Obtenemos el ID del usuario autenticado desde el token
 
-  if (!userId || !num_telefono) {
-    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+  if (!num_telefono) {
+    return res.status(400).json({ error: 'El número de teléfono es obligatorio' });
   }
 
   // Verifica que num_telefono tenga 9 dígitos
@@ -196,9 +197,6 @@ exports.updatePhoneNumber = async (req, res) => {
     res.status(200).json(result.rows[0]);
   } catch (err) {
     console.error('Error al actualizar el número de teléfono:', err);
-    if (err.code === '23505') {
-      return res.status(400).json({ error: 'El número de teléfono ya está registrado' });
-    }
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
