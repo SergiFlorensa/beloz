@@ -4,9 +4,9 @@ const bcrypt = require('bcrypt'); // Si usas bcrypt para alguna funcionalidad ad
 
 // Guardar o actualizar datos de pago
 exports.savePaymentData = async (req, res) => {
-    const { userId, nombreTitular, numeroTarjetaEncriptado, iv, fechaExpiracion, tipoTarjeta, metodoPagoPredeterminado } = req.body;
+    const { userId, nombreTitular, numeroTarjetaEncriptado, iv, fechaExpiracion, tipoTarjeta, metodoPagoPredeterminado, cvvEncriptado } = req.body;
 
-    if (!userId || !nombreTitular || !numeroTarjetaEncriptado || !iv || !fechaExpiracion) {
+    if (!userId || !nombreTitular || !numeroTarjetaEncriptado || !iv || !fechaExpiracion|| !cvvEncriptado) {
         return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
 
@@ -16,15 +16,15 @@ exports.savePaymentData = async (req, res) => {
         if (existingData.rows.length > 0) {
             // Actualizar si ya existen datos
             await pool.query(
-                'UPDATE datos_bancarios SET nombre_titular = $1, numero_tarjeta = $2, iv = $3, fecha_expiracion = $4, tipo_tarjeta = $5, metodo_pago_predeterminado = $6 WHERE user_id = $7',
-                [nombreTitular, numeroTarjetaEncriptado, iv, fechaExpiracion, tipoTarjeta, metodoPagoPredeterminado, userId]
+                'UPDATE datos_bancarios SET nombre_titular = $1, numero_tarjeta = $2, iv = $3, fecha_expiracion = $4, tipo_tarjeta = $5, metodo_pago_predeterminado = $6, cvv = $7 WHERE user_id = $8',
+                [nombreTitular, numeroTarjetaEncriptado, iv, fechaExpiracion, tipoTarjeta, metodoPagoPredeterminado, cvvEncriptado, userId]
             );
             return res.status(200).json({ message: 'Datos de pago actualizados correctamente' });
         } else {
             // Insertar si no existen datos
             await pool.query(
-                'INSERT INTO datos_bancarios (user_id, nombre_titular, numero_tarjeta, iv, fecha_expiracion, tipo_tarjeta, metodo_pago_predeterminado) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-                [userId, nombreTitular, numeroTarjetaEncriptado, iv, fechaExpiracion, tipoTarjeta, metodoPagoPredeterminado]
+                'INSERT INTO datos_bancarios (user_id, nombre_titular, numero_tarjeta, iv, fecha_expiracion, tipo_tarjeta, metodo_pago_predeterminado, cvv) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+                [userId, nombreTitular, numeroTarjetaEncriptado, iv, fechaExpiracion, tipoTarjeta, metodoPagoPredeterminado, cvvEncriptado]
             );
             return res.status(201).json({ message: 'Datos de pago guardados correctamente' });
         }
