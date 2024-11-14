@@ -34,7 +34,14 @@ exports.savePaymentData = async (req, res) => {
     }
 };
 
-// Obtener datos de pago por ID de usuario
+// Desencriptar el número de tarjeta antes de enviarlo
+const decryptCardData = (encryptedData, iv) => {
+    const key = process.env.ENCRYPTION_KEY; // Asegúrate de tener una clave segura almacenada
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key, 'hex'), Buffer.from(iv, 'hex'));
+    let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+};
 exports.getPaymentData = async (req, res) => {
     const { userId } = req.params;
     try {
@@ -42,11 +49,19 @@ exports.getPaymentData = async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'No se encontraron datos de pago para este usuario.' });
         }
-        console.log("Datos de pago recuperados:", result.rows[0]); // Para ver los datos en consola
-        res.status(200).json(result.rows[0]);
+
+        const paymentData = result.rows[0];
+
+        // Desencriptar los datos
+        const decryptedCardNumber = decryptCardData(paymentData.numero_tarjeta, paymentData.iv);
+
+        // Devuelve los datos desencriptados
+        res.status(200).json({
+            ...paymentData,
+            numero_tarjeta: decryptedCardNumber
+        });
     } catch (err) {
         console.error('Error al obtener los datos de pago:', err.message);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
-
