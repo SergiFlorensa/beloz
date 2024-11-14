@@ -42,23 +42,27 @@ const decryptCardData = (encryptedData, iv) => {
     decrypted += decipher.final('utf8');
     return decrypted;
 };
+// Obtener datos de pago por ID de usuario
 exports.getPaymentData = async (req, res) => {
     const { userId } = req.params;
+    console.log(`Recibiendo solicitud para obtener datos de pago para userId: ${userId}`); // Log adicional
+
     try {
         const result = await pool.query('SELECT * FROM datos_bancarios WHERE user_id = $1', [userId]);
+
         if (result.rows.length === 0) {
             console.error("No se encontraron datos para el usuario:", userId); // Mejor log
             return res.status(404).json({ error: 'No se encontraron datos de pago para este usuario.' });
         }
 
         const paymentData = result.rows[0];
-        console.log("Datos de pago encontrados:", paymentData); // Para ver el resultado de la consulta
+        console.log("Datos de pago encontrados:", paymentData); // Log adicional para verificar los datos recuperados
 
         // Desencriptar los datos
         const decryptedCardNumber = decryptCardData(paymentData.numero_tarjeta, paymentData.iv);
 
         if (!decryptedCardNumber) {
-            console.error("Error al desencriptar los datos de la tarjeta.");
+            console.error("Error al desencriptar los datos de la tarjeta."); // Log de desencriptación fallida
             return res.status(500).json({ error: 'Error al desencriptar los datos de pago.' });
         }
 
