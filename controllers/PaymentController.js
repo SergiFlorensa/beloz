@@ -47,13 +47,20 @@ exports.getPaymentData = async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM datos_bancarios WHERE user_id = $1', [userId]);
         if (result.rows.length === 0) {
+            console.error("No se encontraron datos para el usuario:", userId); // Mejor log
             return res.status(404).json({ error: 'No se encontraron datos de pago para este usuario.' });
         }
 
         const paymentData = result.rows[0];
+        console.log("Datos de pago encontrados:", paymentData); // Para ver el resultado de la consulta
 
         // Desencriptar los datos
         const decryptedCardNumber = decryptCardData(paymentData.numero_tarjeta, paymentData.iv);
+
+        if (!decryptedCardNumber) {
+            console.error("Error al desencriptar los datos de la tarjeta.");
+            return res.status(500).json({ error: 'Error al desencriptar los datos de pago.' });
+        }
 
         // Devuelve los datos desencriptados
         res.status(200).json({
@@ -61,7 +68,7 @@ exports.getPaymentData = async (req, res) => {
             numero_tarjeta: decryptedCardNumber
         });
     } catch (err) {
-        console.error('Error al obtener los datos de pago:', err.message);
+        console.error('Error al obtener los datos de pago:', err); // Log completo del error
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
