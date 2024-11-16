@@ -5,7 +5,9 @@ const {
   getRestaurantesPopulares,
   getRestaurantesPorNivelPrecio ,
   getRestaurantesFiltradosPorTipos,
-  searchRestaurantes
+  searchRestaurantes,
+  getRestaurantesPorValoracion,    
+  getRestaurantesPorRelevancia
 } = require('../controllers/restauranteController');
 const router = express.Router();
 
@@ -26,6 +28,11 @@ router.get('/filter', getRestaurantesFiltradosPorTipos);
 // Buscar restaurantes por nombre o tipo de comida
 router.get('/search', searchRestaurantes);
 
+// Obtener restaurantes ordenados por valoración
+router.get('/ordenar_por_valoracion', getRestaurantesPorValoracion);
+
+// Obtener restaurantes ordenados por relevancia
+router.get('/ordenar_por_relevancia', getRestaurantesPorRelevancia);
 // Ruta de prueba
 router.get('/test', async (req, res) => {
   console.log('Solicitud a /api/restaurantes/test recibida');

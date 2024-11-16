@@ -131,3 +131,23 @@ exports.searchRestaurantes = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+// Obtener restaurantes ordenados por valoración
+exports.getRestaurantesPorValoracion = async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM restaurante ORDER BY valoracion DESC');
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Error al obtener los restaurantes por valoración:', err.message);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+// Obtener restaurantes ordenados por relevancia
+exports.getRestaurantesPorRelevancia = async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM restaurante ORDER BY relevancia DESC');
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Error al obtener los restaurantes por relevancia:', err.message);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
