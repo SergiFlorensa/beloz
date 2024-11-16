@@ -43,7 +43,6 @@ const decryptCardData = (encryptedData, iv) => {
     return decrypted;
 };
 // Obtener datos de pago por ID de usuario
-// Obtener datos de pago por ID de usuario
 exports.getPaymentData = async (req, res) => {
     const { userId } = req.params;
     console.log(`Recibiendo solicitud para obtener datos de pago para userId: ${userId}`);
@@ -63,9 +62,18 @@ exports.getPaymentData = async (req, res) => {
         const paymentData = result.rows[0];
         console.log("Datos de pago encontrados:", paymentData);
 
-        // No intentamos desencriptar en el servidor
-        // Simplemente devolvemos los datos tal como están
-        res.status(200).json(paymentData);
+        // Mapeamos los campos a camelCase
+        const paymentDataCamelCase = {
+            userId: paymentData.userId,
+            nombreTitular: paymentData.nombre_titular,
+            numeroTarjetaEncriptado: paymentData.numero_tarjeta,
+            iv: paymentData.iv,
+            fechaExpiracion: paymentData.fecha_expiracion,
+            tipoTarjeta: paymentData.tipo_tarjeta,
+            metodoPagoPredeterminado: paymentData.metodo_pago_predeterminado
+        };
+
+        res.status(200).json(paymentDataCamelCase);
 
     } catch (err) {
         console.error('Error al obtener los datos de pago:', err);
