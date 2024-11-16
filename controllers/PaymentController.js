@@ -43,36 +43,32 @@ const decryptCardData = (encryptedData, iv) => {
     return decrypted;
 };
 // Obtener datos de pago por ID de usuario
+// Obtener datos de pago por ID de usuario
 exports.getPaymentData = async (req, res) => {
     const { userId } = req.params;
-    console.log(`Recibiendo solicitud para obtener datos de pago para userId: ${userId}`); // Log adicional
+    console.log(`Recibiendo solicitud para obtener datos de pago para userId: ${userId}`);
+
+    if (!userId) {
+        return res.status(400).json({ error: 'El userId es requerido' });
+    }
 
     try {
         const result = await pool.query('SELECT * FROM datos_bancarios WHERE user_id = $1', [userId]);
 
         if (result.rows.length === 0) {
-            console.error("No se encontraron datos para el usuario:", userId); // Mejor log
+            console.error("No se encontraron datos para el usuario:", userId);
             return res.status(404).json({ error: 'No se encontraron datos de pago para este usuario.' });
         }
 
         const paymentData = result.rows[0];
-        console.log("Datos de pago encontrados:", paymentData); // Log adicional para verificar los datos recuperados
+        console.log("Datos de pago encontrados:", paymentData);
 
-        // Desencriptar los datos
-        const decryptedCardNumber = decryptCardData(paymentData.numero_tarjeta, paymentData.iv);
+        // No intentamos desencriptar en el servidor
+        // Simplemente devolvemos los datos tal como están
+        res.status(200).json(paymentData);
 
-        if (!decryptedCardNumber) {
-            console.error("Error al desencriptar los datos de la tarjeta."); // Log de desencriptación fallida
-            return res.status(500).json({ error: 'Error al desencriptar los datos de pago.' });
-        }
-
-        // Devuelve los datos desencriptados
-        res.status(200).json({
-            ...paymentData,
-            numero_tarjeta: decryptedCardNumber
-        });
     } catch (err) {
-        console.error('Error al obtener los datos de pago:', err); // Log completo del error
+        console.error('Error al obtener los datos de pago:', err);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
