@@ -7,7 +7,8 @@ const {
   getRestaurantesFiltradosPorTipos,
   searchRestaurantes,
   getRestaurantesPorValoracion,    
-  getRestaurantesPorRelevancia
+  getRestaurantesPorRelevancia,
+  getRestaurantesInteres
 } = require('../controllers/restauranteController');
 const router = express.Router();
 
@@ -33,6 +34,9 @@ router.get('/ordenar_por_valoracion', getRestaurantesPorValoracion);
 
 // Obtener restaurantes ordenados por relevancia
 router.get('/ordenar_por_relevancia', getRestaurantesPorRelevancia);
+
+router.get('/interes', getRestaurantesInteres);
+
 // Ruta de prueba
 router.get('/test', async (req, res) => {
   console.log('Solicitud a /api/restaurantes/test recibida');
