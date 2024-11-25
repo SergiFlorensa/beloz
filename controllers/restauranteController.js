@@ -152,11 +152,11 @@ exports.getRestaurantesPorRelevancia = async (req, res) => {
   }
 };
 
-// Obtener image_path de restaurantes específicos por ID
+// Obtener image_path y name de restaurantes específicos por ID
 exports.getRestaurantesInteres = async (req, res) => {
   try {
     const ids = [5, 6, 8, 22];
-    const query = `SELECT image_path FROM restaurante WHERE restaurante_id = ANY($1)`;
+    const query = `SELECT name, image_path FROM restaurante WHERE restaurante_id = ANY($1)`;
     const result = await pool.query(query, [ids]);
 
     if (result.rows.length === 0) {
@@ -165,8 +165,9 @@ exports.getRestaurantesInteres = async (req, res) => {
 
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Error al obtener los image_path de restaurantes de interés:', err.message);
+    console.error('Error al obtener los image_path y name de restaurantes de interés:', err.message);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 
