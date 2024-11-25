@@ -64,7 +64,7 @@ exports.getPaymentData = async (req, res) => {
 
         // Mapeamos los campos a camelCase
         const paymentDataCamelCase = {
-            userId: paymentData.user_id,
+            userId: paymentData.userId,
             nombreTitular: paymentData.nombre_titular,
             numeroTarjetaEncriptado: paymentData.numero_tarjeta,
             iv: paymentData.iv,
