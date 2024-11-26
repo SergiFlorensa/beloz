@@ -189,7 +189,7 @@ exports.deleteUser = async (req, res) => {
   try {
       // Eliminar detalles de pedido asociados al usuario
       await pool.query(
-          'DELETE FROM detalles_pedido WHERE pedido_id IN (SELECT id_pedido FROM pedidos WHERE user_id = $1)',
+          'DELETE FROM detalle_pedido WHERE pedido_id IN (SELECT id_pedido FROM pedidos WHERE user_id = $1)',
           [userId]
       );
 
