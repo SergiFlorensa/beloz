@@ -1,10 +1,9 @@
 const pool = require('../models/dbpostgre');
 
-// Obtener restaurantes filtrados por país
 exports.getRestaurantesByCountry = async (req, res) => {
   const country = req.query.country;
 
-  console.log('País recibido:', country); // Verifica que el país se está recibiendo correctamente
+  console.log('País recibido:', country); 
 
   if (!country) {
     return res.status(400).json({ error: 'El país es requerido' });
@@ -13,7 +12,7 @@ exports.getRestaurantesByCountry = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM restaurante WHERE country = $1', [country]);
 
-    console.log('Resultados:', result.rows); // Verifica si se devuelven resultados
+    console.log('Resultados:', result.rows); 
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'No se encontraron restaurantes para el país especificado.' });
@@ -28,7 +27,6 @@ exports.getRestaurantesByCountry = async (req, res) => {
 
 
 
-// Obtener restaurantes populares
 exports.getRestaurantesPopulares = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM restaurante WHERE es_popular = true');
@@ -39,7 +37,6 @@ exports.getRestaurantesPopulares = async (req, res) => {
   }
 };
 
-// Obtener todos los restaurantes
 exports.getAllRestaurantes = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM restaurante');
@@ -52,8 +49,6 @@ exports.getAllRestaurantes = async (req, res) => {
 
 
 
-// Filtrar restaurantes por nivel de precio
-// Controlador para obtener restaurantes filtrados por nivel de precio
 exports.getRestaurantesPorNivelPrecio = async (req, res) => {
   const { priceLevel } = req.query;
 
@@ -77,7 +72,6 @@ exports.getRestaurantesPorNivelPrecio = async (req, res) => {
 
 
 
-// Filtrar restaurantes por tipos de comida
 exports.getRestaurantesFiltradosPorTipos = async (req, res) => {
   const types = req.query.types;
 
@@ -87,7 +81,6 @@ exports.getRestaurantesFiltradosPorTipos = async (req, res) => {
 
   const typesArray = types.split(',').map(type => type.trim());
 
-  // Generar condiciones dinámicas para la consulta
   const conditions = typesArray.map((type, index) => `type_of_food ILIKE $${index + 1}`).join(' OR ');
   const values = typesArray.map(type => `%${type}%`);
 
@@ -107,7 +100,6 @@ exports.getRestaurantesFiltradosPorTipos = async (req, res) => {
 };
 
 
-// Buscar restaurantes por nombre o tipo de comida
 exports.searchRestaurantes = async (req, res) => {
   const { query } = req.query;
 
@@ -131,7 +123,6 @@ exports.searchRestaurantes = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-// Obtener restaurantes ordenados por valoración
 exports.getRestaurantesPorValoracion = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM restaurante ORDER BY valoracion DESC');
@@ -141,7 +132,6 @@ exports.getRestaurantesPorValoracion = async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
-// Obtener restaurantes ordenados por relevancia
 exports.getRestaurantesPorRelevancia = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM restaurante ORDER BY relevancia DESC');
@@ -152,8 +142,6 @@ exports.getRestaurantesPorRelevancia = async (req, res) => {
   }
 };
 
-// Obtener image_path y name de restaurantes específicos por ID
-// Obtener name e image_path de restaurantes específicos por ID
 exports.getRestaurantesInteres = async (req, res) => {
   try {
     const ids = [5, 6, 8, 22];

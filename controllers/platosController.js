@@ -1,6 +1,5 @@
 const pool = require('../models/dbpostgre');
 
-// Controlador para obtener platos por ID de restaurante
 exports.getPlatosPorRestaurante = async (req, res) => {
   const restauranteId = req.query.restauranteId;
 

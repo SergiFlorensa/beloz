@@ -3,37 +3,30 @@ const jwt = require('jsonwebtoken');
 const pool = require('../models/dbpostgre');
 
 
-// Registrar usuario
 exports.registerUser = async (req, res) => {
   const { name, surname, email, password, num_telefono } = req.body;
 
-  // Verifica que todos los campos sean obligatorios
   if (!name || !surname || !email || !password || !num_telefono) {
     return res.status(400).json({ error: 'Todos los campos son obligatorios' });
   }
 
-  // Verifica que num_telefono tenga 9 dígitos
   if (num_telefono.length !== 9 || !/^\d+$/.test(num_telefono)) {
     return res.status(400).json({ error: 'El número de teléfono debe tener 9 dígitos' });
   }
 
   try {
-    // Verifica si el email ya está registrado
     const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userResult.rows.length > 0) {
       return res.status(400).json({ error: 'Email ya registrado' });
     }
 
-    // Verifica si el número de teléfono ya está registrado
     const phoneResult = await pool.query('SELECT * FROM users WHERE num_telefono = $1', [num_telefono]);
     if (phoneResult.rows.length > 0) {
       return res.status(400).json({ error: 'El número de teléfono ya está registrado' });
     }
 
-    // Hashea la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Inserta el nuevo usuario en la base de datos
     const result = await pool.query(
       'INSERT INTO users (name, surname, email, password, num_telefono) VALUES ($1, $2, $3, $4, $5) RETURNING *',
       [name, surname, email, hashedPassword, num_telefono]
@@ -42,7 +35,7 @@ exports.registerUser = async (req, res) => {
      res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error durante el registro:', err);
-    if (err.code === '23505') { // Código de error para violación de restricción única en PostgreSQL
+    if (err.code === '23505') { 
       return res.status(400).json({ error: 'El número de teléfono ya está registrado' });
     }
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -50,7 +43,6 @@ exports.registerUser = async (req, res) => {
 };
 
 
-// Iniciar sesión
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -70,7 +62,6 @@ exports.loginUser = async (req, res) => {
       return res.status(400).json({ error: 'Contraseña incorrecta' });
     }
 
-    // Crear token JWT
     const token = jwt.sign({ id_user: user.id_user, email: user.email }, process.env.JWT_SECRET, {
       expiresIn: '24h',
     });
@@ -90,30 +81,25 @@ exports.loginUser = async (req, res) => {
 };
 
 
-// Actualizar correo electrónico
 exports.updateEmail = async (req, res) => {
   const { new_email } = req.body;
-  const userId = req.user.id_user; // Obtenemos el ID del usuario autenticado desde el token
+  const userId = req.user.id_user; 
 
   if (!new_email) {
     return res.status(400).json({ error: 'El nuevo correo es obligatorio' });
   }
 
   try {
-    // Verificar si el nuevo correo ya está registrado
     const emailResult = await pool.query('SELECT * FROM users WHERE email = $1', [new_email]);
     if (emailResult.rows.length > 0) {
       return res.status(400).json({ error: 'El correo ya está en uso' });
     }
 
-    // Actualizar el correo en la base de datos
     await pool.query('UPDATE users SET email = $1 WHERE id_user = $2', [new_email, userId]);
 
-    // Obtener el usuario actualizado
     const userResult = await pool.query('SELECT * FROM users WHERE id_user = $1', [userId]);
     const user = userResult.rows[0];
 
-    // Crear un nuevo token JWT con el correo actualizado
     const token = jwt.sign({ id_user: user.id_user, email: user.email }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
@@ -132,30 +118,25 @@ exports.updateEmail = async (req, res) => {
 };
 
 
-// Actualizar contraseña
 exports.updatePassword = async (req, res) => {
   const { current_password, new_password } = req.body;
-  const userId = req.user.id_user; // Obtenemos el ID del usuario autenticado
+  const userId = req.user.id_user; 
 
   if (!current_password || !new_password) {
     return res.status(400).json({ error: 'Todos los campos son obligatorios' });
   }
 
   try {
-    // Obtener el usuario actual
     const userResult = await pool.query('SELECT * FROM users WHERE id_user = $1', [userId]);
     const user = userResult.rows[0];
 
-    // Verificar que la contraseña actual coincide
     const isMatch = await bcrypt.compare(current_password, user.password);
     if (!isMatch) {
       return res.status(400).json({ error: 'La contraseña actual es incorrecta' });
     }
 
-    // Hashear la nueva contraseña
     const hashedPassword = await bcrypt.hash(new_password, 10);
 
-    // Actualizar la contraseña en la base de datos
     await pool.query('UPDATE users SET password = $1 WHERE id_user = $2', [hashedPassword, userId]);
 
     res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
@@ -165,22 +146,19 @@ exports.updatePassword = async (req, res) => {
   }
 };
 
-// Actualizar número de teléfono
 exports.updatePhoneNumber = async (req, res) => {
   const { num_telefono } = req.body;
-  const userId = req.user.id_user; // Obtenemos el ID del usuario autenticado desde el token
+  const userId = req.user.id_user; 
 
   if (!num_telefono) {
     return res.status(400).json({ error: 'El número de teléfono es obligatorio' });
   }
 
-  // Verifica que num_telefono tenga 9 dígitos
   if (num_telefono.length !== 9 || !/^\d+$/.test(num_telefono)) {
     return res.status(400).json({ error: 'El número de teléfono debe tener 9 dígitos' });
   }
 
   try {
-    // Verifica si el número de teléfono ya está registrado por otro usuario
     const phoneResult = await pool.query(
       'SELECT * FROM users WHERE num_telefono = $1 AND id_user != $2',
       [num_telefono, userId]
@@ -200,6 +178,25 @@ exports.updatePhoneNumber = async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
+exports.deleteUser = async (req, res) => {
+  const userId = req.user.id_user;
+
+  try {
+      // Eliminar el usuario de la base de datos
+      await pool.query('DELETE FROM users WHERE id_user = $1', [userId]);
+
+      // También, eliminar cualquier dato relacionado en otras tablas, si aplica
+      await pool.query('DELETE FROM pedidos WHERE user_id = $1', [userId]);
+      await pool.query('DELETE FROM detalles_pedido WHERE pedido_id IN (SELECT id FROM pedidos WHERE user_id = $1)', [userId]);
+
+      res.status(200).json({ message: 'Cuenta eliminada exitosamente' });
+  } catch (err) {
+      console.error('Error al eliminar la cuenta:', err);
+      res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 
 
 

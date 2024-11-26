@@ -1,8 +1,6 @@
-// PaymentController.js
-const pool = require('../models/dbpostgre'); // Asegúrate de que la ruta sea correcta según la estructura del proyecto
-const bcrypt = require('bcrypt'); // Si usas bcrypt para alguna funcionalidad adicional
+const pool = require('../models/dbpostgre'); 
+const bcrypt = require('bcrypt'); 
 
-// Guardar o actualizar datos de pago
 exports.savePaymentData = async (req, res) => {
     const { userId, nombreTitular, numeroTarjetaEncriptado, iv, fechaExpiracion, tipoTarjeta, metodoPagoPredeterminado } = req.body;
 
@@ -14,14 +12,12 @@ exports.savePaymentData = async (req, res) => {
         const existingData = await pool.query('SELECT * FROM datos_bancarios WHERE user_id = $1', [userId]);
         
         if (existingData.rows.length > 0) {
-            // Actualizar si ya existen datos
             await pool.query(
                 'UPDATE datos_bancarios SET nombre_titular = $1, numero_tarjeta = $2, iv = $3, fecha_expiracion = $4, tipo_tarjeta = $5, metodo_pago_predeterminado = $6 WHERE user_id = $7',
                 [nombreTitular, numeroTarjetaEncriptado, iv, fechaExpiracion, tipoTarjeta, metodoPagoPredeterminado, userId]
             );
             return res.status(200).json({ message: 'Datos de pago actualizados correctamente' });
         } else {
-            // Insertar si no existen datos
             await pool.query(
                 'INSERT INTO datos_bancarios (user_id, nombre_titular, numero_tarjeta, iv, fecha_expiracion, tipo_tarjeta, metodo_pago_predeterminado) VALUES ($1, $2, $3, $4, $5, $6, $7)',
                 [userId, nombreTitular, numeroTarjetaEncriptado, iv, fechaExpiracion, tipoTarjeta, metodoPagoPredeterminado]
@@ -34,7 +30,6 @@ exports.savePaymentData = async (req, res) => {
     }
 };
 
-// Desencriptar el número de tarjeta antes de enviarlo
 const decryptCardData = (encryptedData, iv) => {
     const key = process.env.ENCRYPTION_KEY; // Asegúrate de tener una clave segura almacenada
     const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key, 'hex'), Buffer.from(iv, 'hex'));
@@ -42,7 +37,6 @@ const decryptCardData = (encryptedData, iv) => {
     decrypted += decipher.final('utf8');
     return decrypted;
 };
-// Obtener datos de pago por ID de usuario
 exports.getPaymentData = async (req, res) => {
     const { userId } = req.params;
     console.log(`Recibiendo solicitud para obtener datos de pago para userId: ${userId}`);
@@ -62,7 +56,6 @@ exports.getPaymentData = async (req, res) => {
         const paymentData = result.rows[0];
         console.log("Datos de pago encontrados:", paymentData);
 
-        // Mapeamos los campos a camelCase
         const paymentDataCamelCase = {
             userId: paymentData.userId,
             nombreTitular: paymentData.nombre_titular,
