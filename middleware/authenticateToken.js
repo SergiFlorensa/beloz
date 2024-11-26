@@ -1,3 +1,5 @@
+const jwt = require('jsonwebtoken');
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   console.log('Authorization Header:', authHeader);
@@ -5,7 +7,7 @@ function authenticateToken(req, res, next) {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    console.error('Token no proporcionado en el encabezado Authorization');
+    console.error('Token no proporcionado');
     return res.status(401).json({ error: 'Acceso denegado. Token no proporcionado.' });
   }
 
@@ -19,3 +21,5 @@ function authenticateToken(req, res, next) {
     next();
   });
 }
+
+module.exports = authenticateToken;

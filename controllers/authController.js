@@ -194,14 +194,16 @@ exports.deleteUser = async (req, res) => {
       'DELETE FROM detalles_pedido WHERE pedido_id IN (SELECT id_pedido FROM pedidos WHERE user_id = $1)',
       [userId]
     );
+    console.log('Detalles de pedido eliminados.');
 
     // Luego, elimina los pedidos
     await pool.query('DELETE FROM pedidos WHERE user_id = $1', [userId]);
+    console.log('Pedidos eliminados.');
 
     // Finalmente, elimina el usuario
     await pool.query('DELETE FROM users WHERE id_user = $1', [userId]);
+    console.log('Usuario eliminado.');
 
-    console.log('Cuenta eliminada exitosamente para userId:', userId);
     res.status(200).json({ message: 'Cuenta eliminada exitosamente' });
   } catch (err) {
     console.error('Error al eliminar la cuenta:', err.stack || err);

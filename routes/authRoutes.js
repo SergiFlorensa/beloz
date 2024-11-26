@@ -23,6 +23,7 @@ router.post('/update_email', authenticateToken, updateEmail);
 router.post('/update_password', authenticateToken, updatePassword);
 
 router.post('/update_phone', authenticateToken, updatePhoneNumber);
+
 router.post('/delete_account', authenticateToken, deleteUser);
 
 
