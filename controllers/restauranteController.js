@@ -124,6 +124,7 @@ exports.searchRestaurantes = async (req, res) => {
   }
 };
 
+
 exports.getRestaurantesPorValoracion = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM restaurante ORDER BY valoracion DESC');
