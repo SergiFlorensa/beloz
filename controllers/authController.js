@@ -183,12 +183,17 @@ exports.deleteUser = async (req, res) => {
   const userId = req.user.id_user;
 
   try {
-      // Eliminar el usuario de la base de datos
-      await pool.query('DELETE FROM users WHERE id_user = $1', [userId]);
+      // Primero, elimina los detalles de pedido
+      await pool.query(
+        'DELETE FROM detalles_pedido WHERE pedido_id IN (SELECT id_pedido FROM pedidos WHERE user_id = $1)',
+        [userId]
+      );
 
-      // También, eliminar cualquier dato relacionado en otras tablas, si aplica
+      // Luego, elimina los pedidos
       await pool.query('DELETE FROM pedidos WHERE user_id = $1', [userId]);
-      await pool.query('DELETE FROM detalles_pedido WHERE pedido_id IN (SELECT id FROM pedidos WHERE user_id = $1)', [userId]);
+
+      // Finalmente, elimina el usuario
+      await pool.query('DELETE FROM users WHERE id_user = $1', [userId]);
 
       res.status(200).json({ message: 'Cuenta eliminada exitosamente' });
   } catch (err) {
@@ -196,6 +201,7 @@ exports.deleteUser = async (req, res) => {
       res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 
 
 
