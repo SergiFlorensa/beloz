@@ -114,15 +114,16 @@ exports.searchRestaurantes = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'No restaurants found' });
+      return res.status(200).json({ message: 'No restaurants found for your search.' });
     }
 
     res.status(200).json(result.rows);
   } catch (err) {
     console.error('Error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 exports.getRestaurantesPorValoracion = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM restaurante ORDER BY valoracion DESC');
