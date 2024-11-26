@@ -180,28 +180,35 @@ exports.updatePhoneNumber = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
-  console.log('Contenido de req.user:', req.user);
   const userId = req.user.id_user;
+  console.log('Iniciando eliminación de cuenta para userId:', userId);
+
+  if (!userId) {
+    console.error('ID de usuario no encontrado en req.user');
+    return res.status(400).json({ error: 'ID de usuario no proporcionado en el token.' });
+  }
 
   try {
-      // Primero, elimina los detalles de pedido
-      await pool.query(
-        'DELETE FROM detalles_pedido WHERE pedido_id IN (SELECT id_pedido FROM pedidos WHERE user_id = $1)',
-        [userId]
-      );
+    // Primero, elimina los detalles de pedido
+    await pool.query(
+      'DELETE FROM detalles_pedido WHERE pedido_id IN (SELECT id_pedido FROM pedidos WHERE user_id = $1)',
+      [userId]
+    );
 
-      // Luego, elimina los pedidos
-      await pool.query('DELETE FROM pedidos WHERE user_id = $1', [userId]);
+    // Luego, elimina los pedidos
+    await pool.query('DELETE FROM pedidos WHERE user_id = $1', [userId]);
 
-      // Finalmente, elimina el usuario
-      await pool.query('DELETE FROM users WHERE id_user = $1', [userId]);
+    // Finalmente, elimina el usuario
+    await pool.query('DELETE FROM users WHERE id_user = $1', [userId]);
 
-      res.status(200).json({ message: 'Cuenta eliminada exitosamente' });
+    console.log('Cuenta eliminada exitosamente para userId:', userId);
+    res.status(200).json({ message: 'Cuenta eliminada exitosamente' });
   } catch (err) {
-      console.error('Error al eliminar la cuenta:', err);
-      res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('Error al eliminar la cuenta:', err.stack || err);
+    res.status(500).json({ error: 'Error interno del servidor', details: err.message });
   }
 };
+
 
 
 
