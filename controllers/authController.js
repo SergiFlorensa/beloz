@@ -182,24 +182,27 @@ exports.updatePhoneNumber = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   const userId = req.user.id_user;
 
+  if (!userId) {
+      return res.status(400).json({ error: 'ID de usuario no proporcionado en el token.' });
+  }
+
   try {
-      // Eliminar los detalles de pedido asociados
+      // Eliminar detalles de pedido asociados al usuario
       await pool.query(
           'DELETE FROM detalles_pedido WHERE pedido_id IN (SELECT id_pedido FROM pedidos WHERE user_id = $1)',
           [userId]
       );
 
-      // Eliminar los pedidos asociados
+      // Eliminar los pedidos asociados al usuario
       await pool.query('DELETE FROM pedidos WHERE user_id = $1', [userId]);
 
-      // Finalmente, eliminar al usuario
+      // Eliminar al usuario
       await pool.query('DELETE FROM users WHERE id_user = $1', [userId]);
 
-      // Respuesta exitosa
-      res.status(200).json({ message: "Cuenta eliminada exitosamente" });
+      res.status(200).json({ message: 'Cuenta eliminada exitosamente' });
   } catch (err) {
-      console.error('Error al eliminar la cuenta:', err);
-      res.status(500).json({ error: "Error interno del servidor" });
+      console.error('Error al eliminar la cuenta:', err.stack || err); // Agregar stack completo para depurar
+      res.status(500).json({ error: 'Error interno del servidor', details: err.message });
   }
 };
 
