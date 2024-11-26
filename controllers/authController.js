@@ -180,6 +180,7 @@ exports.updatePhoneNumber = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
+  console.log('Contenido de req.user:', req.user);
   const userId = req.user.id_user;
 
   try {
