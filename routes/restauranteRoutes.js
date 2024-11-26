@@ -30,16 +30,4 @@ router.get('/ordenar_por_relevancia', getRestaurantesPorRelevancia);
 
 router.get('/interes', getRestaurantesInteres);
 
-router.get('/test', async (req, res) => {
-  console.log('Solicitud a /api/restaurantes/test recibida');
-  try {
-    const result = await pool.query('SELECT NOW()');
-    res.status(200).json({ message: 'Servidor y base de datos funcionando', timestamp: result.rows[0].now });
-  } catch (err) {
-    console.error('Error en ruta de prueba:', err.message);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
-
-
 module.exports = router;

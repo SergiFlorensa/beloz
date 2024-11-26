@@ -187,19 +187,15 @@ exports.deleteUser = async (req, res) => {
   }
 
   try {
-    // Eliminar datos bancarios asociados al usuario
     await pool.query('DELETE FROM datos_bancarios WHERE user_id = $1', [userId]);
 
-    // Eliminar detalles de pedido asociados al usuario
     await pool.query(
       'DELETE FROM detalle_pedido WHERE pedido_id IN (SELECT id FROM pedidos WHERE user_id = $1)',
       [userId]
     );
 
-    // Eliminar los pedidos asociados al usuario
     await pool.query('DELETE FROM pedidos WHERE user_id = $1', [userId]);
 
-    // Eliminar al usuario
     await pool.query('DELETE FROM users WHERE id_user = $1', [userId]);
 
     res.status(200).json({ message: 'Cuenta eliminada exitosamente' });

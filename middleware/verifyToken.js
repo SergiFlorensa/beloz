@@ -1,4 +1,4 @@
-exports.verifyToken = (req, res, next) => {
+/*exports.verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     console.log('Hora del servidor:', new Date().toISOString());
@@ -20,3 +20,4 @@ exports.verifyToken = (req, res, next) => {
         return res.status(401).json({ error: 'Token inválido o expirado' });
     }
 };
+*/
