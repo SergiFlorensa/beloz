@@ -200,23 +200,15 @@ exports.deleteUser = async (req, res) => {
 
     res.status(200).json({ message: 'Cuenta eliminada exitosamente' });
   } catch (err) {
-    console.error('Error al eliminar la cuenta:', err.stack || err); // Agregar stack completo para depurar
+    console.error('Error al eliminar la cuenta:', err.stack || err); 
     res.status(500).json({ error: 'Error interno del servidor', details: err.message });
   }
 };
 
-
-
-
-
-
-
-// Logout
 exports.logoutUser = (req, res) => {
   const token = req.headers['authorization']?.split(' ')[1];
 
   if (token) {
-    // Aquí puedes agregar lógica para invalidar el token en caso de que lo necesites
     res.status(200).json({ message: 'Logout exitoso' });
   } else {
     res.status(400).json({ error: 'No se proporcionó un token para logout' });

@@ -31,7 +31,7 @@ exports.savePaymentData = async (req, res) => {
 };
 
 const decryptCardData = (encryptedData, iv) => {
-    const key = process.env.ENCRYPTION_KEY; // Asegúrate de tener una clave segura almacenada
+    const key = process.env.ENCRYPTION_KEY; 
     const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key, 'hex'), Buffer.from(iv, 'hex'));
     let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
     decrypted += decipher.final('utf8');

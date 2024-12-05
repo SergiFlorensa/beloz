@@ -25,8 +25,6 @@ exports.getRestaurantesByCountry = async (req, res) => {
   }
 };
 
-
-
 exports.getRestaurantesPopulares = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM restaurante WHERE es_popular = true');
@@ -47,8 +45,6 @@ exports.getAllRestaurantes = async (req, res) => {
   }
 };
 
-
-
 exports.getRestaurantesPorNivelPrecio = async (req, res) => {
   const { priceLevel } = req.query;
 
@@ -65,12 +61,10 @@ exports.getRestaurantesPorNivelPrecio = async (req, res) => {
 
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Error al cargar restaurantes:', err.message); // Loguea el error
+    console.error('Error al cargar restaurantes:', err.message); 
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
-
-
 
 exports.getRestaurantesFiltradosPorTipos = async (req, res) => {
   const types = req.query.types;
