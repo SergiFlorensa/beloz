@@ -10,6 +10,7 @@ const {
   getRestaurantesPorRelevancia,
   getRestaurantesInteres
 } = require('../controllers/restauranteController');
+const { getPlatosPorRestaurante } = require('../controllers/platosController');
 const router = express.Router();
 
 router.get('/', getAllRestaurantes);
@@ -29,5 +30,7 @@ router.get('/ordenar_por_valoracion', getRestaurantesPorValoracion);
 router.get('/ordenar_por_relevancia', getRestaurantesPorRelevancia);
 
 router.get('/interes', getRestaurantesInteres);
+
+router.get('/:id/platos', getPlatosPorRestaurante);
 
 module.exports = router;

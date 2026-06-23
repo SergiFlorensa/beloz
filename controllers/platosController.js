@@ -1,17 +1,18 @@
 const pool = require('../models/dbpostgre');
 
 exports.getPlatosPorRestaurante = async (req, res) => {
-  const restauranteId = req.query.restauranteId;
+  const restauranteId = req.params.id || req.query.restauranteId || req.query.restaurante_id;
 
   if (!restauranteId) {
     return res.status(400).json({ error: 'El ID del restaurante es requerido' });
   }
 
   try {
+    const restaurantColumn = await getPlatosRestaurantColumn();
     const result = await pool.query(
-      `SELECT id, name, description, price, image_path, restaurantid AS restaurante_id
+      `SELECT id, name, description, price, image_path, ${restaurantColumn} AS restaurante_id
        FROM platos
-       WHERE restaurantid = $1`,
+       WHERE ${restaurantColumn} = $1`,
       [restauranteId]
     );
 
@@ -26,3 +27,18 @@ exports.getPlatosPorRestaurante = async (req, res) => {
   }
 };
 
+async function getPlatosRestaurantColumn() {
+  const result = await pool.query(
+    `SELECT column_name
+     FROM information_schema.columns
+     WHERE table_name = 'platos'
+       AND column_name IN ('restaurantid', 'restaurante_id')
+     ORDER BY CASE column_name
+       WHEN 'restaurantid' THEN 1
+       WHEN 'restaurante_id' THEN 2
+     END
+     LIMIT 1`
+  );
+
+  return result.rows[0]?.column_name || 'restaurantid';
+}

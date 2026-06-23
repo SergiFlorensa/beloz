@@ -9,6 +9,7 @@ const path = require('path');
 const platosRoutes = require('./routes/platosRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const pedidosRoutes = require('./routes/pedidosRoutes');
+const pool = require('./models/dbpostgre');
 
 
 dotenv.config();
@@ -22,6 +23,20 @@ app.use(cors());
 
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
+app.get('/', (req, res) => {
+  res.json({ name: 'Beloz API', status: 'ok' });
+});
+
+app.get('/salud', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ estado: 'ok', db: 'ok', timestamp: new Date().toISOString() });
+  } catch (err) {
+    console.error('Healthcheck DB error:', err.message);
+    res.status(500).json({ estado: 'error', db: 'error', detail: err.message });
+  }
+});
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'default_secret',
   resave: false,
@@ -33,6 +48,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/restaurantes', restaurantesRoutes);
 app.use('/api/platos', platosRoutes);
 app.use('/api/payment', paymentRoutes); 
+app.use('/api/pagos', paymentRoutes);
 app.use('/api/pedidos', pedidosRoutes);
 
 app.use((err, req, res, next) => {

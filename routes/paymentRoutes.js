@@ -6,4 +6,6 @@ router.post('/save', savePaymentData);
 
 router.get('/:userId', getPaymentData);
 
+router.put('/:userId', savePaymentData);
+
 module.exports = router;

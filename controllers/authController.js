@@ -4,7 +4,8 @@ const pool = require('../models/dbpostgre');
 
 
 exports.registerUser = async (req, res) => {
-  const { name, surname, email, password, num_telefono } = req.body;
+  const { name, surname, email, num_telefono } = req.body;
+  const password = req.body.password || req.body.password_hash;
 
   if (!name || !surname || !email || !password || !num_telefono) {
     return res.status(400).json({ error: 'Todos los campos son obligatorios' });
@@ -15,6 +16,7 @@ exports.registerUser = async (req, res) => {
   }
 
   try {
+    const schema = await getUsersSchema();
     const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userResult.rows.length > 0) {
       return res.status(400).json({ error: 'Email ya registrado' });
@@ -28,11 +30,13 @@ exports.registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const result = await pool.query(
-      'INSERT INTO users (name, surname, email, password, num_telefono) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      `INSERT INTO users (name, surname, email, ${schema.passwordColumn}, num_telefono)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
       [name, surname, email, hashedPassword, num_telefono]
     );
 
-     res.status(201).json(result.rows[0]);
+     res.status(201).json(toUserResponse(result.rows[0], schema));
   } catch (err) {
     console.error('Error durante el registro:', err);
     if (err.code === '23505') { 
@@ -51,23 +55,27 @@ exports.loginUser = async (req, res) => {
   }
 
   try {
+    const schema = await getUsersSchema();
     const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userResult.rows.length === 0) {
       return res.status(400).json({ error: 'Usuario no encontrado' });
     }
 
     const user = userResult.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user[schema.passwordColumn]);
     if (!isMatch) {
       return res.status(400).json({ error: 'Contraseña incorrecta' });
     }
 
-    const token = jwt.sign({ id_user: user.id_user, email: user.email }, process.env.JWT_SECRET, {
+    const userId = user[schema.idColumn];
+    const token = jwt.sign({ id_user: userId, user_id: userId, id: userId, email: user.email }, process.env.JWT_SECRET || 'default_jwt_secret', {
       expiresIn: '24h',
     });
 
     res.status(200).json({
-      id_user: user.id_user,
+      id: userId,
+      id_user: userId,
+      user_id: userId,
       name: user.name,
       surname: user.surname,
       email: user.email,
@@ -214,3 +222,32 @@ exports.logoutUser = (req, res) => {
     res.status(400).json({ error: 'No se proporcionó un token para logout' });
   }
 };
+
+async function getUsersSchema() {
+  const result = await pool.query(
+    `SELECT column_name
+     FROM information_schema.columns
+     WHERE table_name = 'users'
+       AND column_name IN ('id', 'id_user', 'password', 'password_hash')`
+  );
+  const columns = new Set(result.rows.map((row) => row.column_name));
+
+  return {
+    idColumn: columns.has('id_user') ? 'id_user' : 'id',
+    passwordColumn: columns.has('password') ? 'password' : 'password_hash'
+  };
+}
+
+function toUserResponse(user, schema) {
+  const userId = user[schema.idColumn];
+
+  return {
+    id: userId,
+    id_user: userId,
+    user_id: userId,
+    name: user.name,
+    surname: user.surname,
+    email: user.email,
+    num_telefono: user.num_telefono
+  };
+}
