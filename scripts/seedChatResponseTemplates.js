@@ -2,7 +2,8 @@ require('dotenv').config();
 
 const pool = require('../models/dbpostgre');
 
-const SEED_SOURCE = 'beloz_chat_templates_v1';
+const SEED_SOURCE = 'beloz_chat_templates_v2';
+const EXPECTED_TEMPLATE_COUNT = 200;
 
 function t(intent, variant, responseText, tags = []) {
   return { intent, variant, responseText, tags };
@@ -125,12 +126,132 @@ const templates = [
   t('out_of_domain', 2, 'Esa consulta se sale de Beloz. Si quieres, dime que te apetece comer y te recomiendo algo.', ['fuera_dominio']),
   t('out_of_domain', 3, 'No soy un asistente general: estoy pensado para ayudarte a elegir comida y restaurantes en Beloz.', ['fuera_dominio']),
   t('out_of_domain', 4, 'Para ese tema no tengo datos fiables. Puedo ayudarte con pedidos, platos, precios o restaurantes.', ['fuera_dominio']),
-  t('out_of_domain', 5, 'Prefiero no inventar sobre eso. En Beloz puedo recomendarte opciones segun antojo, presupuesto o rapidez.', ['fuera_dominio'])
+  t('out_of_domain', 5, 'Prefiero no inventar sobre eso. En Beloz puedo recomendarte opciones segun antojo, presupuesto o rapidez.', ['fuera_dominio']),
+
+  t('single_word_hint', 1, 'Con esa pista, miraria {restaurante}. {plato} encaja como primera opcion.', ['palabra_suelta']),
+  t('single_word_hint', 2, 'Si solo me dices "{message}", lo interpreto como antojo. Te propongo {restaurante}.', ['palabra_suelta']),
+  t('single_word_hint', 3, 'Para una busqueda rapida por "{message}", empezaria por {restaurante}.', ['palabra_suelta']),
+  t('single_word_hint', 4, 'Entendido: "{message}". La opcion mas directa que veo es {restaurante}, con {plato}.', ['palabra_suelta']),
+  t('single_word_hint', 5, 'Con esa palabra clave, mi recomendacion es {restaurante}. {motivo}.', ['palabra_suelta']),
+  t('single_word_hint', 6, 'Puedo trabajar con pistas cortas. Para "{message}", prueba {restaurante}.', ['palabra_suelta']),
+  t('single_word_hint', 7, 'Si quieres algo relacionado con "{message}", iria a {restaurante} y miraria {plato}.', ['palabra_suelta']),
+
+  t('dessert', 1, 'Si te apetece postre, revisaria {restaurante}. Puedes empezar mirando {plato}.', ['postre']),
+  t('dessert', 2, 'Para cerrar con algo dulce, {restaurante} es una opcion a considerar.', ['postre']),
+  t('dessert', 3, 'Buscando postre, te recomendaria revisar {restaurante} y su opcion {plato}.', ['postre']),
+  t('dessert', 4, 'Si el plan es algo dulce despues de comer, {restaurante} puede encajar.', ['postre']),
+  t('dessert', 5, 'Para antojo dulce, empieza por {restaurante}. Si no encaja, dime "mas dulce" o "mas ligero".', ['postre']),
+
+  t('drink', 1, 'Si buscas bebida, revisa {restaurante}; despues confirma en la carta las opciones disponibles.', ['bebida']),
+  t('drink', 2, 'Para acompanar el pedido, miraria primero {restaurante}. El plato base recomendado es {plato}.', ['bebida']),
+  t('drink', 3, 'Si quieres bebida y comida, {restaurante} puede ser buen punto de partida.', ['bebida']),
+  t('drink', 4, 'Para algo de beber, mejor confirmar disponibilidad en la ficha del restaurante antes de pedir.', ['bebida']),
+  t('drink', 5, 'Puedo ayudarte a elegir comida; para bebidas concretas, revisa la carta de {restaurante}.', ['bebida']),
+
+  t('spicy', 1, 'Si quieres picante, buscaria una opcion intensa en {restaurante}. Empieza por {plato}.', ['picante']),
+  t('spicy', 2, 'Para algo con chispa, {restaurante} puede encajar. Revisa si {plato} permite nivel de picante.', ['picante']),
+  t('spicy', 3, 'Antojo picante detectado. Miraria {restaurante} y confirmaria detalles del plato antes de pedir.', ['picante']),
+  t('spicy', 4, 'Si te gusta el picante, priorizaria comida {tipo}. La opcion sugerida es {restaurante}.', ['picante']),
+  t('spicy', 5, 'Para picante sin improvisar, dime si lo quieres suave, medio o fuerte y ajusto mejor.', ['picante']),
+
+  t('sweet_salty', 1, 'Si dudas entre dulce y salado, empezaria por salado en {restaurante}: {plato}.', ['dulce_salado']),
+  t('sweet_salty', 2, 'Para algo salado, {restaurante} tiene sentido. Plato sugerido: {plato}.', ['dulce_salado']),
+  t('sweet_salty', 3, 'Si el cuerpo pide dulce, busca postre; si pide salado, mi opcion es {restaurante}.', ['dulce_salado']),
+  t('sweet_salty', 4, 'Con antojo salado, iria a {restaurante}. {motivo}.', ['dulce_salado']),
+  t('sweet_salty', 5, 'Para resolver dulce o salado, dime una palabra mas: postre, snack, cena o compartir.', ['dulce_salado']),
+
+  t('group_order', 1, 'Para un grupo, elegiria {restaurante}: comida {tipo}, espera de {tiempo} min y opcion facil como {plato}.', ['grupo']),
+  t('group_order', 2, 'Si sois varios, prioriza variedad y precio. {restaurante} parece buena base.', ['grupo']),
+  t('group_order', 3, 'Para compartir en grupo, miraria {restaurante} y anadiria platos faciles de repartir.', ['grupo']),
+  t('group_order', 4, 'Con mucha gente, mejor evitar opciones raras: {restaurante} es una apuesta segura.', ['grupo']),
+  t('group_order', 5, 'Para pedido grupal, dime cuantas personas sois y ajusto cantidad, precio y estilo.', ['grupo']),
+
+  t('family_kids', 1, 'Para familia o ninos, buscaria algo sencillo y reconocible. {restaurante} encaja bien.', ['familia']),
+  t('family_kids', 2, 'Si hay ninos, prioriza platos faciles: {plato} en {restaurante} puede funcionar.', ['familia']),
+  t('family_kids', 3, 'Para una comida familiar, {restaurante} parece una opcion practica y sin complicaciones.', ['familia']),
+  t('family_kids', 4, 'Con ninos, mejor revisar ingredientes y elegir algo poco arriesgado. Miraria {restaurante}.', ['familia']),
+  t('family_kids', 5, 'Para familia, dime si buscas barato, rapido o variedad y afino la recomendacion.', ['familia']),
+
+  t('date_night', 1, 'Para una cena tranquila, elegiria {restaurante}. Tiene comida {tipo} y una opcion como {plato}.', ['cita']),
+  t('date_night', 2, 'Si es una cita, buscaria algo con buena sensacion y poca complicacion: {restaurante}.', ['cita']),
+  t('date_night', 3, 'Para plan en pareja, {restaurante} puede funcionar bien. Espera aproximada: {tiempo} min.', ['cita']),
+  t('date_night', 4, 'Si quieres quedar bien, iria a {restaurante} y pediria {plato}.', ['cita']),
+  t('date_night', 5, 'Para cena especial sin complicarte, {restaurante} es mi apuesta.', ['cita']),
+
+  t('work_lunch', 1, 'Para comer trabajando, priorizaria rapidez y orden limpio: {restaurante}, con {plato}.', ['trabajo']),
+  t('work_lunch', 2, 'Si es comida de oficina, {restaurante} encaja por espera y plato sencillo.', ['trabajo']),
+  t('work_lunch', 3, 'Para pausa corta, elige {restaurante}. Espera aproximada: {tiempo} min.', ['trabajo']),
+  t('work_lunch', 4, 'Comida de trabajo: mejor algo facil de comer. Miraria {plato} en {restaurante}.', ['trabajo']),
+  t('work_lunch', 5, 'Si tienes reunion despues, iria a por una opcion ligera y rapida en {restaurante}.', ['trabajo']),
+
+  t('healthy', 1, 'Para algo saludable, miraria {restaurante}. {plato} parece una opcion razonable.', ['saludable']),
+  t('healthy', 2, 'Si buscas sano, prioriza platos ligeros y revisa ingredientes. Empezaria por {restaurante}.', ['saludable']),
+  t('healthy', 3, 'Opcion mas cuidada: {restaurante}. Si quieres, puedo filtrar por ligero o vegetariano.', ['saludable']),
+  t('healthy', 4, 'Para comer mejor sin complicarte, {plato} en {restaurante} puede encajar.', ['saludable']),
+  t('healthy', 5, 'Si quieres algo saludable, dime si prefieres ensalada, poke, sushi o bajo en grasa.', ['saludable']),
+
+  t('high_protein', 1, 'Si buscas proteina, miraria {restaurante} y escogeria un plato principal como {plato}.', ['proteina']),
+  t('high_protein', 2, 'Para algo mas saciante, {restaurante} puede encajar. Revisa {plato}.', ['proteina']),
+  t('high_protein', 3, 'Con objetivo de proteina, evita postres como base y empieza por {restaurante}.', ['proteina']),
+  t('high_protein', 4, 'Si quieres proteina, dime carne, pollo, pescado o vegetal y ajusto mejor.', ['proteina']),
+
+  t('pickup_delivery', 1, 'Para recoger o pedir a domicilio, revisa disponibilidad en la ficha de {restaurante}.', ['recogida_delivery']),
+  t('pickup_delivery', 2, 'Si vas a recoger, prioriza espera baja. {restaurante} marca unos {tiempo} min.', ['recogida_delivery']),
+  t('pickup_delivery', 3, 'Para delivery, elige algo que viaje bien. {plato} en {restaurante} puede funcionar.', ['recogida_delivery']),
+  t('pickup_delivery', 4, 'Si prefieres recoger, abre {restaurante} y confirma opciones antes de pagar.', ['recogida_delivery']),
+  t('pickup_delivery', 5, 'Para domicilio, revisa direccion, total y tiempo estimado antes de confirmar.', ['recogida_delivery']),
+
+  t('hours_location', 1, 'Para horarios o ubicacion, revisa la ficha de {restaurante}; ahi deberia estar la informacion actualizada.', ['horario_ubicacion']),
+  t('hours_location', 2, 'No quiero inventar horarios. Abre {restaurante} y confirma si esta disponible ahora.', ['horario_ubicacion']),
+  t('hours_location', 3, 'Si preguntas por direccion, usa la ficha del restaurante para evitar errores.', ['horario_ubicacion']),
+  t('hours_location', 4, 'Para saber si esta abierto, comprueba disponibilidad en {restaurante} antes de hacer pedido.', ['horario_ubicacion']),
+  t('hours_location', 5, 'Puedo recomendarte, pero horarios y ubicacion deben confirmarse en la ficha del local.', ['horario_ubicacion']),
+
+  t('favorites_repeat', 1, 'Si quieres repetir algo parecido, {restaurante} encaja con tus patrones recientes.', ['favoritos']),
+  t('favorites_repeat', 2, 'Para repetir sin pensar, iria a {restaurante} y pediria {plato}.', ['favoritos']),
+  t('favorites_repeat', 3, 'Si buscas algo de tus favoritos, puedo priorizar restaurantes que ya has mirado antes.', ['favoritos']),
+  t('favorites_repeat', 4, 'Opcion familiar para ti: {restaurante}. {motivo}.', ['favoritos']),
+  t('favorites_repeat', 5, 'Para repetir una buena experiencia, empieza por {restaurante}.', ['favoritos']),
+
+  t('promotions', 1, 'Para ofertas o descuentos, revisa la ficha de {restaurante}; yo puedo ayudarte a elegir dentro del presupuesto.', ['ofertas']),
+  t('promotions', 2, 'Si buscas oferta, combina precio bajo y espera corta. Ahora miraria {restaurante}.', ['ofertas']),
+  t('promotions', 3, 'No puedo garantizar promociones, pero {plato} por {precio} EUR parece una opcion controlada.', ['ofertas']),
+  t('promotions', 4, 'Para ahorrar, te recomiendo empezar por opciones economicas como {restaurante}.', ['ofertas']),
+
+  t('indecisive', 1, 'Si no sabes que pedir, te saco de dudas: {restaurante} y {plato}.', ['indecision']),
+  t('indecisive', 2, 'Decision rapida: {restaurante}. Es una opcion equilibrada por precio, tiempo y tipo.', ['indecision']),
+  t('indecisive', 3, 'Cuando hay duda, reduce variables: elige {tipo}, espera de {tiempo} min y {plato}.', ['indecision']),
+  t('indecisive', 4, 'Si quieres que elija por ti, me quedo con {restaurante}.', ['indecision']),
+  t('indecisive', 5, 'Para decidir ya, iria a {restaurante}. Si no te convence, dime "otra opcion".', ['indecision']),
+
+  t('negative_filter', 1, 'Entendido, evito esa preferencia. Con lo disponible, miraria {restaurante}.', ['evitar']),
+  t('negative_filter', 2, 'Si no quieres {message}, puedo buscar una alternativa. Primera opcion: {restaurante}.', ['evitar']),
+  t('negative_filter', 3, 'Para evitar algo concreto, dime "sin queso", "sin picante" o "sin carne" y ajusto mejor.', ['evitar']),
+  t('negative_filter', 4, 'Si quieres excluir ingredientes, confirma siempre alergenos con el restaurante antes de pedir.', ['evitar']),
+  t('negative_filter', 5, 'Buscando alternativa, {restaurante} puede funcionar. Revisa {plato}.', ['evitar']),
+
+  t('portion_sharing', 1, 'Para compartir, buscaria platos faciles de repartir. {restaurante} puede ser buena base.', ['compartir']),
+  t('portion_sharing', 2, 'Si vais a compartir, {plato} en {restaurante} puede servir como punto de partida.', ['compartir']),
+  t('portion_sharing', 3, 'Para dos o mas personas, dime cuantas sois y ajusto cantidad y presupuesto.', ['compartir']),
+  t('portion_sharing', 4, 'Pedido para compartir: prioriza variedad. Empezaria por {restaurante}.', ['compartir']),
+  t('portion_sharing', 5, 'Si quieres raciones o algo para picar, miraria {restaurante}.', ['compartir']),
+
+  t('thanks', 1, 'De nada. Cuando quieras, dime antojo, presupuesto o prisa y te recomiendo rapido.', ['gracias']),
+  t('thanks', 2, 'A ti. Si quieres otra opcion, dime "otra" y busco una alternativa.', ['gracias']),
+  t('thanks', 3, 'Perfecto. Si cambias de idea, puedo ajustar por precio, rapidez o tipo de comida.', ['gracias']),
+  t('thanks', 4, 'Listo. Estoy aqui para ayudarte a elegir sin perder tiempo.', ['gracias']),
+  t('thanks', 5, 'Cuando quieras seguimos. Puedo comparar, recomendar o afinar por presupuesto.', ['gracias']),
+
+  t('complaint_issue', 1, 'Si algo no funciona en el pedido, revisa el carrito y vuelve al restaurante para ajustar.', ['problema']),
+  t('complaint_issue', 2, 'Si ves un error de precio o plato, no confirmes todavia; vuelve a revisar la ficha.', ['problema']),
+  t('complaint_issue', 3, 'Si la app no carga una opcion, prueba de nuevo en unos segundos o cambia de restaurante.', ['problema']),
+  t('complaint_issue', 4, 'Para incidencias de pedido, revisa el resumen y evita confirmar hasta que todo cuadre.', ['problema']),
+  t('complaint_issue', 5, 'Si hay un problema, puedo ayudarte a encontrar otra alternativa rapida como {restaurante}.', ['problema'])
 ];
 
 async function main() {
-  if (templates.length !== 100) {
-    throw new Error(`El seed debe tener exactamente 100 plantillas. Tiene ${templates.length}.`);
+  if (templates.length !== EXPECTED_TEMPLATE_COUNT) {
+    throw new Error(`El seed debe tener exactamente ${EXPECTED_TEMPLATE_COUNT} plantillas. Tiene ${templates.length}.`);
   }
 
   await pool.query('BEGIN');
@@ -161,12 +282,12 @@ async function main() {
     }
 
     const count = await pool.query('SELECT COUNT(*)::int AS total FROM chat_response_templates');
-    if (count.rows[0].total !== 100) {
-      throw new Error(`La tabla debe quedar con 100 registros. Tiene ${count.rows[0].total}.`);
+    if (count.rows[0].total !== EXPECTED_TEMPLATE_COUNT) {
+      throw new Error(`La tabla debe quedar con ${EXPECTED_TEMPLATE_COUNT} registros. Tiene ${count.rows[0].total}.`);
     }
 
     await pool.query('COMMIT');
-    console.log('chat_response_templates seeded with exactly 100 records');
+    console.log(`chat_response_templates seeded with exactly ${EXPECTED_TEMPLATE_COUNT} records`);
   } catch (err) {
     await pool.query('ROLLBACK');
     throw err;

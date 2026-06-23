@@ -161,11 +161,23 @@ function generarRespuestaPorReglas(contexto, catalogo, plantillas = []) {
       if (terms.includes('barato') || terms.includes('economico')) {
         score += esPrecioBajo(item.price_level) ? 12 : 0;
       }
-      if (terms.includes('ligero')) {
+      if (terms.includes('ligero') || terms.includes('sano') || terms.includes('saludable')) {
         if (contieneAlguno(text, ['poke', 'sushi', 'ensalada', 'ceviche'])) score += 12;
       }
       if (terms.includes('caliente') || terms.includes('frio') || terms.includes('lluvia')) {
         if (contieneAlguno(text, ['ramen', 'curry', 'pizza', 'kebab', 'india'])) score += 12;
+      }
+      if (terms.includes('picante')) {
+        if (contieneAlguno(text, ['mexicana', 'india', 'curry', 'taco', 'kebab', 'spicy'])) score += 12;
+      }
+      if (terms.includes('postre') || terms.includes('dulce')) {
+        if (contieneAlguno(text, ['postre', 'dulce', 'tarta', 'cake', 'brownie', 'helado'])) score += 12;
+      }
+      if (terms.includes('bebida') || terms.includes('beber')) {
+        if (contieneAlguno(text, ['bebida', 'drink', 'refresco', 'agua', 'cerveza'])) score += 8;
+      }
+      if (terms.includes('grupo') || terms.includes('compartir') || terms.includes('familia')) {
+        score += Number(item.valoracion || 0) * 2;
       }
 
       return { ...item, score };
@@ -173,6 +185,7 @@ function generarRespuestaPorReglas(contexto, catalogo, plantillas = []) {
     .sort((a, b) => b.score - a.score);
 
   const scoredUnicos = restaurantesUnicos(scored).slice(0, 3);
+  const intent = determinarIntentPlantilla(contexto.message);
 
   const sugerencias = scoredUnicos.map((item) => ({
     restaurante_id: item.restaurante_id,
@@ -185,13 +198,15 @@ function generarRespuestaPorReglas(contexto, catalogo, plantillas = []) {
     motivo: construirMotivo(item, terms)
   }));
 
-  const respuesta = construirRespuestaTexto(contexto, sugerencias, plantillas);
+  const respuesta = construirRespuestaTexto(contexto, sugerencias, plantillas, intent);
+  const sugerenciasFinales = debeOcultarSugerencias(intent) ? [] : sugerencias;
 
   return {
     provider: 'rules',
     respuesta,
-    accion: sugerencias.length ? 'recommend' : 'general',
-    sugerencias
+    accion: sugerenciasFinales.length ? 'recommend' : 'general',
+    intent,
+    sugerencias: sugerenciasFinales
   };
 }
 
@@ -205,7 +220,7 @@ function restaurantesUnicos(items) {
   });
 }
 
-function construirRespuestaTexto(contexto, sugerencias, plantillas) {
+function construirRespuestaTexto(contexto, sugerencias, plantillas, intent) {
   if (!sugerencias.length) {
     return renderPlantilla(
       elegirPlantilla(plantillas, 'fallback_clarify', contexto.message),
@@ -214,7 +229,6 @@ function construirRespuestaTexto(contexto, sugerencias, plantillas) {
   }
 
   const primera = sugerencias[0];
-  const intent = determinarIntentPlantilla(contexto.message);
   return renderPlantilla(
     elegirPlantilla(plantillas, intent, contexto.message),
     datosPlantilla(contexto.message, primera)
@@ -355,6 +369,7 @@ function normalizarConteos(items) {
 function debeResponderConMotorRapido(contexto, respuestaReglas) {
   if (AI_RESPONSE_MODE === 'ollama') return false;
   if (AI_RESPONSE_MODE === 'fast') return true;
+  if (debeOcultarSugerencias(respuestaReglas.intent)) return true;
   if (!respuestaReglas.sugerencias.length) return false;
 
   const text = normalizarTexto(contexto.message);
@@ -370,15 +385,68 @@ function debeResponderConMotorRapido(contexto, respuestaReglas) {
     'cenar',
     'comer',
     'sorprendeme',
-    'recomienda'
+    'recomienda',
+    'postre',
+    'dulce',
+    'salado',
+    'bebida',
+    'beber',
+    'picante',
+    'grupo',
+    'familia',
+    'ninos',
+    'pareja',
+    'cita',
+    'trabajo',
+    'oficina',
+    'sano',
+    'saludable',
+    'proteina',
+    'recoger',
+    'domicilio',
+    'delivery',
+    'abierto',
+    'horario',
+    'direccion',
+    'favorito',
+    'repetir',
+    'oferta',
+    'descuento',
+    'no se',
+    'elige',
+    'sin ',
+    'compartir',
+    'gracias',
+    'problema',
+    'error'
   ]);
 }
 
 function determinarIntentPlantilla(message) {
   const text = normalizarTexto(message);
   const presupuesto = extraerPresupuesto(text);
+  const tokenCount = text.split(/\s+/).filter(Boolean).length;
 
   if (containsGreeting(text)) return 'greet';
+  if (containsAny(text, ['gracias', 'muchas gracias', 'perfecto gracias', 'ok gracias'])) return 'thanks';
+  if (containsAny(text, ['problema', 'error', 'no carga', 'fallo', 'no funciona', 'mal', 'incidencia'])) return 'complaint_issue';
+  if (containsAny(text, ['abierto', 'horario', 'direccion', 'ubicacion', 'donde esta', 'telefono', 'contacto'])) return 'hours_location';
+  if (containsAny(text, ['recoger', 'recogida', 'domicilio', 'delivery', 'llevar', 'para llevar', 'pickup'])) return 'pickup_delivery';
+  if (containsAny(text, ['favorito', 'favoritos', 'repetir', 'lo de siempre', 'otra vez', 'ultimo pedido'])) return 'favorites_repeat';
+  if (containsAny(text, ['oferta', 'descuento', 'promo', 'promocion', 'cupon', 'ahorrar'])) return 'promotions';
+  if (containsAny(text, ['no se', 'elige tu', 'elige por mi', 'lo que sea', 'me da igual', 'indeciso', 'indecisa'])) return 'indecisive';
+  if (containsAny(text, ['sin ', 'no quiero', 'evita', 'evitar', 'quita', 'sin queso', 'sin carne', 'sin picante'])) return 'negative_filter';
+  if (containsAny(text, ['compartir', 'raciones', 'para dos', 'para 2', 'para picar', 'picar'])) return 'portion_sharing';
+  if (containsAny(text, ['grupo', 'varios', 'muchos', 'amigos', 'personas'])) return 'group_order';
+  if (containsAny(text, ['familia', 'ninos', 'peques', 'infantil'])) return 'family_kids';
+  if (containsAny(text, ['pareja', 'cita', 'romantica', 'romantico', 'quedar bien'])) return 'date_night';
+  if (containsAny(text, ['trabajo', 'oficina', 'reunion', 'pausa', 'tupper'])) return 'work_lunch';
+  if (containsAny(text, ['proteina', 'proteico', 'pollo', 'carne', 'pescado'])) return 'high_protein';
+  if (containsAny(text, ['sano', 'saludable', 'fit', 'cuidarme', 'bajo en grasa'])) return 'healthy';
+  if (containsAny(text, ['picante', 'spicy', 'fuerte'])) return 'spicy';
+  if (containsAny(text, ['postre', 'dulce', 'helado', 'tarta', 'brownie'])) return 'dessert';
+  if (containsAny(text, ['bebida', 'beber', 'refresco', 'agua', 'cerveza'])) return 'drink';
+  if (containsAny(text, ['salado', 'dulce o salado', 'antojo dulce', 'antojo salado'])) return 'sweet_salty';
   if (containsAny(text, ['compara', 'comparar', 'mejor que', 'diferencia'])) return 'compare';
   if (containsAny(text, ['carrito', 'pagar', 'checkout', 'confirmar pedido'])) return 'cart_checkout';
   if (containsAny(text, ['pedido', 'pedir', 'ordenar'])) return 'order_help';
@@ -395,7 +463,20 @@ function determinarIntentPlantilla(message) {
   if (containsAny(text, ['sushi', 'pizza', 'hamburguesa', 'kebab', 'taco', 'pasta', 'ensalada', 'postre', 'bebida', 'asiatica', 'india', 'mexicana'])) {
     return 'recommend_food_type';
   }
+  if (tokenCount <= 2) return 'single_word_hint';
   return 'recommend_general';
+}
+
+function debeOcultarSugerencias(intent) {
+  return new Set([
+    'thanks',
+    'complaint_issue',
+    'hours_location',
+    'dietary',
+    'order_help',
+    'cart_checkout',
+    'negative_filter'
+  ]).has(intent);
 }
 
 function elegirPlantilla(plantillas, intent, seed) {
@@ -491,6 +572,26 @@ function esPreguntaFueraDeDominio(message) {
     'postre',
     'bebida',
     'picante',
+    'dulce',
+    'salado',
+    'grupo',
+    'familia',
+    'ninos',
+    'pareja',
+    'cita',
+    'trabajo',
+    'oficina',
+    'proteina',
+    'recoger',
+    'domicilio',
+    'delivery',
+    'abierto',
+    'horario',
+    'direccion',
+    'favorito',
+    'oferta',
+    'descuento',
+    'compartir',
     'frio',
     'caliente'
   ];
