@@ -1,8 +1,11 @@
 const express = require('express');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const session = require('express-session');
-const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const restaurantesRoutes = require('./routes/restauranteRoutes'); 
 const path = require('path');
@@ -13,8 +16,6 @@ const recomendacionesRoutes = require('./routes/recomendacionesRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const pool = require('./models/dbpostgre');
 
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;

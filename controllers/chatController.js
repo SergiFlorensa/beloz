@@ -1,8 +1,18 @@
 const pool = require('../models/dbpostgre');
 
 const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434';
-const DEFAULT_OLLAMA_MODEL = 'gemma3:12b';
+const DEFAULT_OLLAMA_MODEL = 'gemma3:1b';
 const OLLAMA_TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS || 12000);
+const OLLAMA_NUM_CTX = Number(process.env.OLLAMA_NUM_CTX || 1024);
+const OLLAMA_NUM_PREDICT = Number(process.env.OLLAMA_NUM_PREDICT || 120);
+const OLLAMA_NUM_THREAD = Number(process.env.OLLAMA_NUM_THREAD || 4);
+const OLLAMA_KEEP_ALIVE = process.env.OLLAMA_KEEP_ALIVE || '30m';
+const AI_RESPONSE_MODE = String(process.env.AI_RESPONSE_MODE || 'balanced').toLowerCase();
+const CATALOG_CACHE_TTL_MS = Number(process.env.CATALOG_CACHE_TTL_MS || 300000);
+const TEMPLATE_CACHE_TTL_MS = Number(process.env.TEMPLATE_CACHE_TTL_MS || 300000);
+
+let catalogoCache = null;
+let plantillasCache = null;
 
 exports.responderChat = async (req, res) => {
   const message = String(req.body?.message || '').trim();
@@ -12,14 +22,24 @@ exports.responderChat = async (req, res) => {
   }
 
   try {
+    if (esPreguntaFueraDeDominio(message)) {
+      const plantillas = await cargarPlantillasRespuesta();
+      return res.status(200).json(respuestaFueraDeDominio(plantillas, message));
+    }
+
     const catalogo = await cargarCatalogo();
+    const plantillas = await cargarPlantillasRespuesta();
     const contexto = {
       message,
       perfil: normalizarPerfil(req.body?.perfil_sabor || req.body?.perfilSabor || {}),
       contextoApp: req.body?.contexto || {}
     };
 
-    const respuestaReglas = generarRespuestaPorReglas(contexto, catalogo);
+    const respuestaReglas = generarRespuestaPorReglas(contexto, catalogo, plantillas);
+    if (debeResponderConMotorRapido(contexto, respuestaReglas)) {
+      return res.status(200).json({ ...respuestaReglas, provider: 'rules_fast' });
+    }
+
     const respuestaOllama = await generarRespuestaConOllama(contexto, catalogo, respuestaReglas);
 
     res.status(200).json(respuestaOllama || respuestaReglas);
@@ -43,11 +63,18 @@ async function generarRespuestaConOllama(contexto, catalogo, fallback) {
         model: process.env.OLLAMA_MODEL || DEFAULT_OLLAMA_MODEL,
         stream: false,
         format: 'json',
+        raw: true,
+        think: false,
+        keep_alive: OLLAMA_KEEP_ALIVE,
         options: {
-          temperature: 0.35,
-          num_predict: 420
+          temperature: 0.1,
+          top_k: 20,
+          top_p: 0.75,
+          num_ctx: OLLAMA_NUM_CTX,
+          num_predict: OLLAMA_NUM_PREDICT,
+          num_thread: OLLAMA_NUM_THREAD
         },
-        prompt: construirPrompt(contexto, catalogo, fallback)
+        prompt: construirPromptRapido(contexto, catalogo, fallback)
       }),
       signal: controller.signal
     });
@@ -60,11 +87,13 @@ async function generarRespuestaConOllama(contexto, catalogo, fallback) {
     const parsed = parseJsonSeguro(data.response);
     if (!parsed?.respuesta) return null;
 
+    const sugerencias = normalizarSugerencias(parsed.sugerencias, catalogo).slice(0, 3);
+
     return {
       provider: 'ollama',
       respuesta: String(parsed.respuesta).slice(0, 900),
       accion: normalizarAccion(parsed.accion),
-      sugerencias: normalizarSugerencias(parsed.sugerencias, catalogo).slice(0, 3)
+      sugerencias: sugerencias.length ? sugerencias : fallback.sugerencias
     };
   } catch (err) {
     console.warn('Ollama no disponible, usando fallback:', err.message);
@@ -74,38 +103,34 @@ async function generarRespuestaConOllama(contexto, catalogo, fallback) {
   }
 }
 
-function construirPrompt(contexto, catalogo, fallback) {
-  const restaurantes = catalogo.restaurantes.slice(0, 28).map((item) => ({
+function construirPromptRapido(contexto, catalogo, fallback) {
+  const restaurantes = restaurantesUnicos(catalogo.restaurantes).slice(0, 10).map((item) => ({
     restaurante_id: item.restaurante_id,
     name: item.name,
     type_of_food: item.type_of_food,
-    price_level: item.price_level,
     wait_time: item.wait_time,
-    valoracion: item.valoracion,
     plato: item.plato_name,
     plato_price: item.plato_price
   }));
 
-  const perfil = {
-    top_tipos_comida: contexto.perfil.topTiposComida,
-    top_rangos_precio: contexto.perfil.topRangosPrecio,
-    top_restaurantes: contexto.perfil.topRestaurantes
-  };
-
   return [
-    'Eres Beloz AI, un asistente gastronomico local dentro de una app de comida.',
-    'Responde en espanol, con tono claro, directo y util. No inventes restaurantes fuera del catalogo.',
-    'Tu objetivo es ayudar a decidir que pedir, elegir restaurante, comparar opciones o proponer planes.',
-    'Devuelve SOLO JSON valido con esta forma:',
+    'Responde como Beloz AI. Espanol, breve, util. No inventes restaurantes.',
+    'Devuelve SOLO JSON compacto con esta forma:',
     '{"respuesta":"texto breve","accion":"recommend|compare|search|general","sugerencias":[{"restaurante_id":1,"motivo":"por que encaja"}]}',
     `Mensaje del usuario: ${contexto.message}`,
-    `Perfil local anonimo: ${JSON.stringify(perfil)}`,
-    `Catalogo disponible: ${JSON.stringify(restaurantes)}`,
-    `Fallback si dudas: ${JSON.stringify(fallback)}`
+    `Top catalogo: ${JSON.stringify(restaurantes)}`,
+    `Respuesta base: ${JSON.stringify({
+      respuesta: fallback.respuesta,
+      accion: fallback.accion,
+      sugerencias: fallback.sugerencias.map((item) => ({
+        restaurante_id: item.restaurante_id,
+        motivo: item.motivo
+      }))
+    })}`
   ].join('\n');
 }
 
-function generarRespuestaPorReglas(contexto, catalogo) {
+function generarRespuestaPorReglas(contexto, catalogo, plantillas = []) {
   const terms = normalizarTexto(contexto.message);
   const presupuesto = extraerPresupuesto(terms);
   const preferidos = contexto.perfil.topTiposComida.map((item) => normalizarTexto(item.clave));
@@ -160,7 +185,7 @@ function generarRespuestaPorReglas(contexto, catalogo) {
     motivo: construirMotivo(item, terms)
   }));
 
-  const respuesta = construirRespuestaTexto(contexto.message, sugerencias);
+  const respuesta = construirRespuestaTexto(contexto, sugerencias, plantillas);
 
   return {
     provider: 'rules',
@@ -180,14 +205,20 @@ function restaurantesUnicos(items) {
   });
 }
 
-function construirRespuestaTexto(message, sugerencias) {
+function construirRespuestaTexto(contexto, sugerencias, plantillas) {
   if (!sugerencias.length) {
-    return 'No he encontrado una opcion clara con los datos actuales. Prueba a decirme presupuesto, tipo de comida o si tienes prisa.';
+    return renderPlantilla(
+      elegirPlantilla(plantillas, 'fallback_clarify', contexto.message),
+      datosPlantilla(contexto.message)
+    ) || 'No he encontrado una opcion clara con los datos actuales. Prueba a decirme presupuesto, tipo de comida o si tienes prisa.';
   }
 
   const primera = sugerencias[0];
-  const plato = primera.plato ? ` y pediria ${primera.plato}` : '';
-  return `Para "${message}", mi primera opcion seria ${primera.restaurante_nombre}${plato}. ${primera.motivo}`;
+  const intent = determinarIntentPlantilla(contexto.message);
+  return renderPlantilla(
+    elegirPlantilla(plantillas, intent, contexto.message),
+    datosPlantilla(contexto.message, primera)
+  ) || `Para "${contexto.message}", mi primera opcion seria ${primera.restaurante_nombre}. ${primera.motivo}`;
 }
 
 function construirMotivo(item, terms) {
@@ -204,6 +235,11 @@ function construirMotivo(item, terms) {
 }
 
 async function cargarCatalogo() {
+  const now = Date.now();
+  if (catalogoCache && catalogoCache.expiresAt > now) {
+    return catalogoCache.data;
+  }
+
   const restaurantTable = await getRestaurantTableName();
   const restaurantIdColumn = await getRestaurantIdColumn(restaurantTable);
   const platoRestaurantColumn = await getPlatosRestaurantColumn();
@@ -235,7 +271,43 @@ async function cargarCatalogo() {
      ORDER BY r.valoracion DESC NULLS LAST, r.relevancia DESC NULLS LAST`
   );
 
-  return { restaurantes: result.rows };
+  const catalogo = { restaurantes: result.rows };
+  catalogoCache = {
+    data: catalogo,
+    expiresAt: now + CATALOG_CACHE_TTL_MS
+  };
+  return catalogo;
+}
+
+async function cargarPlantillasRespuesta() {
+  const now = Date.now();
+  if (plantillasCache && plantillasCache.expiresAt > now) {
+    return plantillasCache.data;
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT intent, variant, response_text
+       FROM chat_response_templates
+       WHERE active = TRUE
+       ORDER BY intent ASC, variant ASC`
+    );
+
+    plantillasCache = {
+      data: result.rows,
+      expiresAt: now + TEMPLATE_CACHE_TTL_MS
+    };
+    return result.rows;
+  } catch (err) {
+    if (err.code !== '42P01') {
+      console.warn('No se pudieron cargar plantillas de chat:', err.message);
+    }
+    plantillasCache = {
+      data: [],
+      expiresAt: now + 30000
+    };
+    return [];
+  }
 }
 
 function normalizarSugerencias(items, catalogo) {
@@ -278,6 +350,165 @@ function normalizarConteos(items) {
     }))
     .filter((item) => item.clave && item.conteo > 0)
     .slice(0, 5);
+}
+
+function debeResponderConMotorRapido(contexto, respuestaReglas) {
+  if (AI_RESPONSE_MODE === 'ollama') return false;
+  if (AI_RESPONSE_MODE === 'fast') return true;
+  if (!respuestaReglas.sugerencias.length) return false;
+
+  const text = normalizarTexto(contexto.message);
+  return contieneAlguno(text, [
+    'quiero',
+    'apetece',
+    'sushi',
+    'pizza',
+    'hamburguesa',
+    'barato',
+    'rapido',
+    'ligero',
+    'cenar',
+    'comer',
+    'sorprendeme',
+    'recomienda'
+  ]);
+}
+
+function determinarIntentPlantilla(message) {
+  const text = normalizarTexto(message);
+  const presupuesto = extraerPresupuesto(text);
+
+  if (containsGreeting(text)) return 'greet';
+  if (containsAny(text, ['compara', 'comparar', 'mejor que', 'diferencia'])) return 'compare';
+  if (containsAny(text, ['carrito', 'pagar', 'checkout', 'confirmar pedido'])) return 'cart_checkout';
+  if (containsAny(text, ['pedido', 'pedir', 'ordenar'])) return 'order_help';
+  if (containsAny(text, ['tarda', 'tiempo', 'espera', 'cuando llega'])) return 'delivery_time';
+  if (containsAny(text, ['vegetariano', 'vegano', 'sin gluten', 'alergia', 'alergeno', 'alergenos'])) return 'dietary';
+  if (containsAny(text, ['plato', 'menu', 'carta'])) return 'dish_info';
+  if (containsAny(text, ['restaurante', 'local'])) return 'restaurant_info';
+  if (containsAny(text, ['sorprendeme', 'sorpresa', 'diferente', 'algo nuevo'])) return 'surprise_me';
+  if (containsAny(text, ['rapido', 'prisa', 'ya', 'urgente'])) return 'recommend_fast';
+  if (presupuesto) return 'recommend_budget';
+  if (containsAny(text, ['barato', 'economico', 'poco dinero'])) return 'recommend_budget_low';
+  if (containsAny(text, ['ligero', 'suave', 'sano', 'saludable'])) return 'recommend_light';
+  if (containsAny(text, ['frio', 'caliente', 'lluvia', 'contundente'])) return 'comfort_food';
+  if (containsAny(text, ['sushi', 'pizza', 'hamburguesa', 'kebab', 'taco', 'pasta', 'ensalada', 'postre', 'bebida', 'asiatica', 'india', 'mexicana'])) {
+    return 'recommend_food_type';
+  }
+  return 'recommend_general';
+}
+
+function elegirPlantilla(plantillas, intent, seed) {
+  const candidates = plantillas.filter((item) => item.intent === intent);
+  const fallback = candidates.length ? candidates : plantillas.filter((item) => item.intent === 'recommend_general');
+  if (!fallback.length) return null;
+  return fallback[hashString(seed) % fallback.length];
+}
+
+function datosPlantilla(message, sugerencia = {}) {
+  const presupuesto = extraerPresupuesto(normalizarTexto(message));
+  return {
+    message,
+    restaurante: sugerencia.restaurante_nombre || 'una opcion de Beloz',
+    plato: sugerencia.plato || 'un plato recomendado',
+    precio: sugerencia.price != null ? Number(sugerencia.price).toFixed(2) : 'precio disponible',
+    tiempo: sugerencia.wait_time != null ? String(sugerencia.wait_time) : 'varios',
+    tipo: sugerencia.type_of_food || 'comida',
+    motivo: sugerencia.motivo || 'encaja con lo que buscas',
+    presupuesto: presupuesto != null ? String(presupuesto) : 'tu presupuesto'
+  };
+}
+
+function renderPlantilla(plantilla, data) {
+  if (!plantilla?.response_text) return null;
+  return plantilla.response_text.replace(/\{([a-z_]+)\}/g, (_, key) => {
+    return Object.prototype.hasOwnProperty.call(data, key) ? data[key] : '';
+  });
+}
+
+function hashString(value) {
+  let hash = 0;
+  const text = String(value || '');
+  for (let i = 0; i < text.length; i += 1) {
+    hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+function containsGreeting(text) {
+  return /^(hola|buenas|buenos dias|buenas tardes|hey)\b/.test(text);
+}
+
+function containsAny(text, tokens) {
+  return tokens.some((token) => text.includes(token));
+}
+
+function esPreguntaFueraDeDominio(message) {
+  const text = normalizarTexto(message);
+  if (!text) return false;
+
+  if (containsAny(text, [
+    'fuera de comida',
+    'otra cosa que no sea comida',
+    'programar',
+    'codigo',
+    'politica',
+    'noticias',
+    'futbol',
+    'matematicas',
+    'historia',
+    'curriculum',
+    'cv',
+    'bitcoin',
+    'bolsa'
+  ])) {
+    return true;
+  }
+
+  const palabrasDominio = [
+    'comer',
+    'comida',
+    'cenar',
+    'almorzar',
+    'restaurante',
+    'plato',
+    'pedido',
+    'pedir',
+    'hamburguesa',
+    'pizza',
+    'sushi',
+    'kebab',
+    'taco',
+    'pasta',
+    'ensalada',
+    'barato',
+    'rapido',
+    'ligero',
+    'precio',
+    'euro',
+    'vegetariano',
+    'vegano',
+    'postre',
+    'bebida',
+    'picante',
+    'frio',
+    'caliente'
+  ];
+
+  const parecePreguntaGeneral = containsAny(text, ['quien', 'cuando', 'donde', 'como', 'porque', 'cuanto es', 'explicame']);
+  return parecePreguntaGeneral && !containsAny(text, palabrasDominio);
+}
+
+function respuestaFueraDeDominio(plantillas = [], message = '') {
+  return {
+    provider: 'rules_fast',
+    respuesta: renderPlantilla(
+      elegirPlantilla(plantillas, 'out_of_domain', message),
+      datosPlantilla(message)
+    ) || 'Puedo ayudarte con restaurantes, platos, precios, tiempos de espera y recomendaciones dentro de Beloz. Dime que te apetece, tu presupuesto o si tienes prisa.',
+    accion: 'general',
+    sugerencias: []
+  };
 }
 
 function debeUsarOllama() {
