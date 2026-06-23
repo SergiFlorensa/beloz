@@ -4,7 +4,10 @@ const shouldUseSsl =
   process.env.PGSSLMODE === 'require' ||
   process.env.DB_SSL === 'true' ||
   process.env.NODE_ENV === 'production' ||
-  /render\.com|render\.internal|amazonaws\.com/i.test(process.env.DATABASE_URL || '');
+  (
+    Boolean(process.env.DATABASE_URL) &&
+    !/localhost|127\.0\.0\.1/i.test(process.env.DATABASE_URL)
+  );
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
