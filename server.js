@@ -9,6 +9,7 @@ const path = require('path');
 const platosRoutes = require('./routes/platosRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const pedidosRoutes = require('./routes/pedidosRoutes');
+const recomendacionesRoutes = require('./routes/recomendacionesRoutes');
 const pool = require('./models/dbpostgre');
 
 
@@ -50,6 +51,7 @@ app.use('/api/platos', platosRoutes);
 app.use('/api/payment', paymentRoutes); 
 app.use('/api/pagos', paymentRoutes);
 app.use('/api/pedidos', pedidosRoutes);
+app.use('/api/recomendaciones', recomendacionesRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
