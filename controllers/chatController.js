@@ -145,10 +145,11 @@ function generarRespuestaPorReglas(contexto, catalogo) {
 
       return { ...item, score };
     })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
+    .sort((a, b) => b.score - a.score);
 
-  const sugerencias = scored.map((item) => ({
+  const scoredUnicos = restaurantesUnicos(scored).slice(0, 3);
+
+  const sugerencias = scoredUnicos.map((item) => ({
     restaurante_id: item.restaurante_id,
     restaurante_nombre: item.name,
     image_path: item.plato_image_path || item.image_path,
@@ -167,6 +168,16 @@ function generarRespuestaPorReglas(contexto, catalogo) {
     accion: sugerencias.length ? 'recommend' : 'general',
     sugerencias
   };
+}
+
+function restaurantesUnicos(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const id = String(item.restaurante_id);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
 }
 
 function construirRespuestaTexto(message, sugerencias) {
