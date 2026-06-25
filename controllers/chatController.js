@@ -10,6 +10,31 @@ const OLLAMA_KEEP_ALIVE = process.env.OLLAMA_KEEP_ALIVE || '30m';
 const AI_RESPONSE_MODE = String(process.env.AI_RESPONSE_MODE || 'balanced').toLowerCase();
 const CATALOG_CACHE_TTL_MS = Number(process.env.CATALOG_CACHE_TTL_MS || 300000);
 const TEMPLATE_CACHE_TTL_MS = Number(process.env.TEMPLATE_CACHE_TTL_MS || 300000);
+const CATEGORY_ORDER = [
+  'Entrantes',
+  'Ensaladas',
+  'Sopas',
+  'Woks',
+  'Curry',
+  'Pasta',
+  'Arroz',
+  'Especialidades',
+  'Oferta 2x1',
+  'Ofertas',
+  'Complementos',
+  'Empanadas Argentinas',
+  'Pizzas',
+  'Pizzas Veganas con Mözza Väcka',
+  'Helados',
+  'BAO BUN',
+  'RAMEN',
+  'SPICY RAMEN',
+  'RAMEN VEGANO',
+  'NOODLES',
+  'ARROCES',
+  'POSTRES',
+  'BEBIDAS',
+];
 
 let catalogoCache = null;
 let plantillasCache = null;
@@ -34,6 +59,11 @@ exports.responderChat = async (req, res) => {
       perfil: normalizarPerfil(req.body?.perfil_sabor || req.body?.perfilSabor || {}),
       contextoApp: req.body?.contexto || {}
     };
+
+    const respuestaCarta = generarRespuestaCartaRestaurante(contexto, catalogo);
+    if (respuestaCarta) {
+      return res.status(200).json({ ...respuestaCarta, provider: 'rules_fast' });
+    }
 
     const respuestaReglas = generarRespuestaPorReglas(contexto, catalogo, plantillas);
     if (debeResponderConMotorRapido(contexto, respuestaReglas)) {
@@ -103,6 +133,76 @@ async function generarRespuestaConOllama(contexto, catalogo, fallback) {
   }
 }
 
+function generarRespuestaCartaRestaurante(contexto, catalogo) {
+  const terms = normalizarTexto(contexto.message);
+  if (!esConsultaCarta(terms)) return null;
+
+  const restaurante = encontrarRestauranteMencionado(terms, catalogo.restaurantes);
+  if (!restaurante) return null;
+
+  const platos = catalogo.restaurantes
+    .filter((item) => Number(item.restaurante_id) === Number(restaurante.restaurante_id) && item.plato_name)
+    .map((item) => ({
+      ...item,
+      category: extraerCategoriaPlato(item.plato_description),
+      cleanDescription: limpiarDescripcionFuente(item.plato_description),
+    }))
+    .sort((a, b) => categoryRank(a.category) - categoryRank(b.category) || Number(a.plato_id) - Number(b.plato_id));
+
+  if (!platos.length) return null;
+
+  const grouped = new Map();
+  for (const plato of platos) {
+    const category = plato.category || 'Carta';
+    if (!grouped.has(category)) grouped.set(category, []);
+    grouped.get(category).push(plato);
+  }
+
+  const sections = [...grouped.entries()].slice(0, 8).map(([category, items]) => {
+    const names = items.slice(0, 4).map((item) => `${item.plato_name} (${Number(item.plato_price).toFixed(2)} EUR)`);
+    const suffix = items.length > names.length ? ` y ${items.length - names.length} mas` : '';
+    return `${normalizarCategoriaVisible(category)}: ${names.join(', ')}${suffix}`;
+  });
+
+  const destacados = platos
+    .filter((item) => terms.split(/\s+/).some((token) => token.length > 2 && normalizarTexto(`${item.plato_name} ${item.cleanDescription} ${item.category}`).includes(token)))
+    .slice(0, 3);
+  const sugerenciasBase = destacados.length ? destacados : platos.slice(0, 3);
+
+  return {
+    respuesta: `${restaurante.name} tiene ${platos.length} platos cargados desde carta real. ${sections.join('. ')}.`,
+    accion: 'menu',
+    intent: 'menu_list',
+    sugerencias: sugerenciasBase.map((item) => ({
+      restaurante_id: item.restaurante_id,
+      restaurante_nombre: item.name,
+      image_path: item.plato_image_path || item.image_path,
+      plato: item.plato_name,
+      price: item.plato_price ? Number(item.plato_price) : null,
+      wait_time: item.wait_time,
+      type_of_food: item.type_of_food,
+      motivo: `${normalizarCategoriaVisible(item.category)}: ${limpiarDescripcionFuente(item.plato_description).slice(0, 120)}`
+    }))
+  };
+}
+
+function esConsultaCarta(text) {
+  return containsAny(text, ['lista de platos', 'listado de platos', 'carta', 'menu', 'platos del restaurante', 'platos de']);
+}
+
+function encontrarRestauranteMencionado(text, items) {
+  const unicos = restaurantesUnicos(items);
+  return unicos
+    .map((item) => {
+      const name = normalizarTexto(item.name);
+      const tokens = name.split(/\s+/).filter((token) => token.length > 2);
+      const score = tokens.reduce((total, token) => total + (text.includes(token) ? 1 : 0), 0);
+      return { item, score, fullMatch: text.includes(name) };
+    })
+    .filter((match) => match.fullMatch || match.score >= Math.min(2, normalizarTexto(match.item.name).split(/\s+/).length))
+    .sort((a, b) => Number(b.fullMatch) - Number(a.fullMatch) || b.score - a.score)[0]?.item || null;
+}
+
 function construirPromptRapido(contexto, catalogo, fallback) {
   const restaurantes = restaurantesUnicos(catalogo.restaurantes).slice(0, 10).map((item) => ({
     restaurante_id: item.restaurante_id,
@@ -137,17 +237,15 @@ function generarRespuestaPorReglas(contexto, catalogo, plantillas = []) {
 
   const scored = catalogo.restaurantes
     .map((item) => {
-      const text = normalizarTexto([
-        item.name,
-        item.type_of_food,
-        item.country,
-        item.plato_name,
-        item.plato_description
-      ].join(' '));
+      const restaurantText = normalizarTexto([item.name, item.type_of_food, item.country].join(' '));
+      const dishText = normalizarTexto([item.plato_name, item.plato_description].join(' '));
+      const text = `${restaurantText} ${dishText}`;
       let score = Number(item.valoracion || 0) * 10 + Number(item.relevancia || 0);
 
       for (const token of terms.split(/\s+/).filter((t) => t.length > 2)) {
         if (text.includes(token)) score += 9;
+        if (dishText.includes(token)) score += 10;
+        if (normalizarTexto(item.plato_name).includes(token)) score += 8;
       }
 
       for (const tipo of preferidos) {
@@ -163,6 +261,9 @@ function generarRespuestaPorReglas(contexto, catalogo, plantillas = []) {
       }
       if (terms.includes('ligero') || terms.includes('sano') || terms.includes('saludable')) {
         if (contieneAlguno(text, ['poke', 'sushi', 'ensalada', 'ceviche'])) score += 12;
+      }
+      if (esConsultaVegetal(terms)) {
+        if (contieneAlguno(text, ['vegano', 'vegana', 'vegetariano', 'vegetariana', 'vegetal', 'verduras', 'setas', 'tofu', 'yasai', 'niku nashi'])) score += 18;
       }
       if (terms.includes('caliente') || terms.includes('frio') || terms.includes('lluvia')) {
         if (contieneAlguno(text, ['ramen', 'curry', 'pizza', 'kebab', 'india'])) score += 12;
@@ -275,14 +376,8 @@ async function cargarCatalogo() {
        p.price AS plato_price,
        p.image_path AS plato_image_path
      FROM ${restaurantTable} r
-     LEFT JOIN LATERAL (
-       SELECT id, name, description, price, image_path
-       FROM platos
-       WHERE ${platoRestaurantColumn} = r.${restaurantIdColumn}
-       ORDER BY price ASC NULLS LAST, id ASC
-       LIMIT 2
-     ) p ON true
-     ORDER BY r.valoracion DESC NULLS LAST, r.relevancia DESC NULLS LAST`
+     LEFT JOIN platos p ON p.${platoRestaurantColumn} = r.${restaurantIdColumn}
+     ORDER BY r.valoracion DESC NULLS LAST, r.relevancia DESC NULLS LAST, p.price ASC NULLS LAST`
   );
 
   const catalogo = { restaurantes: result.rows };
@@ -435,7 +530,8 @@ function determinarIntentPlantilla(message) {
   if (containsAny(text, ['favorito', 'favoritos', 'repetir', 'lo de siempre', 'otra vez', 'ultimo pedido'])) return 'favorites_repeat';
   if (containsAny(text, ['oferta', 'descuento', 'promo', 'promocion', 'cupon', 'ahorrar'])) return 'promotions';
   if (containsAny(text, ['no se', 'elige tu', 'elige por mi', 'lo que sea', 'me da igual', 'indeciso', 'indecisa'])) return 'indecisive';
-  if (containsAny(text, ['sin ', 'no quiero', 'evita', 'evitar', 'quita', 'sin queso', 'sin carne', 'sin picante'])) return 'negative_filter';
+  if (esConsultaAlergenos(text)) return 'dietary';
+  if (!esConsultaVegetal(text) && containsAny(text, ['sin ', 'no quiero', 'evita', 'evitar', 'quita', 'sin queso', 'sin carne', 'sin picante'])) return 'negative_filter';
   if (containsAny(text, ['compartir', 'raciones', 'para dos', 'para 2', 'para picar', 'picar'])) return 'portion_sharing';
   if (containsAny(text, ['grupo', 'varios', 'muchos', 'amigos', 'personas'])) return 'group_order';
   if (containsAny(text, ['familia', 'ninos', 'peques', 'infantil'])) return 'family_kids';
@@ -451,7 +547,7 @@ function determinarIntentPlantilla(message) {
   if (containsAny(text, ['carrito', 'pagar', 'checkout', 'confirmar pedido'])) return 'cart_checkout';
   if (containsAny(text, ['pedido', 'pedir', 'ordenar'])) return 'order_help';
   if (containsAny(text, ['tarda', 'tiempo', 'espera', 'cuando llega'])) return 'delivery_time';
-  if (containsAny(text, ['vegetariano', 'vegano', 'sin gluten', 'alergia', 'alergeno', 'alergenos'])) return 'dietary';
+  if (esConsultaVegetal(text)) return 'recommend_food_type';
   if (containsAny(text, ['plato', 'menu', 'carta'])) return 'dish_info';
   if (containsAny(text, ['restaurante', 'local'])) return 'restaurant_info';
   if (containsAny(text, ['sorprendeme', 'sorpresa', 'diferente', 'algo nuevo'])) return 'surprise_me';
@@ -522,6 +618,14 @@ function containsGreeting(text) {
 
 function containsAny(text, tokens) {
   return tokens.some((token) => text.includes(token));
+}
+
+function esConsultaVegetal(text) {
+  return containsAny(text, ['vegetariano', 'vegetariana', 'vegano', 'vegana', 'sin carne', 'solo verduras', 'vegetal']);
+}
+
+function esConsultaAlergenos(text) {
+  return containsAny(text, ['sin gluten', 'celiaco', 'celiaca', 'alergia', 'alergeno', 'alergenos', 'intolerancia', 'lactosa']);
 }
 
 function esPreguntaFueraDeDominio(message) {
@@ -648,6 +752,27 @@ function normalizarTexto(value) {
 
 function contieneAlguno(texto, tokens) {
   return tokens.some((token) => texto.includes(token));
+}
+
+function extraerCategoriaPlato(description) {
+  const match = String(description || '').match(/\[([^\].]+)\.\s*Fuente oficial:/i);
+  return match?.[1]?.trim() || 'Carta';
+}
+
+function limpiarDescripcionFuente(description) {
+  return String(description || '')
+    .replace(/\s*\[[^\]]*Fuente oficial:[^\]]*\]\s*$/i, '')
+    .trim();
+}
+
+function categoryRank(category) {
+  const index = CATEGORY_ORDER.findIndex((item) => item.toLowerCase() === String(category || '').toLowerCase());
+  return index === -1 ? CATEGORY_ORDER.length : index;
+}
+
+function normalizarCategoriaVisible(category) {
+  const value = String(category || 'Carta').trim();
+  return value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : 'Carta';
 }
 
 function esPrecioBajo(price) {
