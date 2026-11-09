@@ -47,14 +47,16 @@ exports.getPlatosPorRestaurante = async (req, res) => {
   try {
     const restaurantColumn = await getPlatosRestaurantColumn();
     const result = await pool.query(
-      `SELECT id, name, description, price, image_path, ${restaurantColumn} AS restaurante_id
+      `SELECT id, name, description, price, image_path, ${restaurantColumn} AS restaurante_id,
+              to_jsonb(platos)->>'source_url' AS source_url,
+              to_jsonb(platos)->>'source_updated_at' AS source_updated_at
        FROM platos
        WHERE ${restaurantColumn} = $1`,
       [restauranteId]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'No se encontraron platos para el restaurante especificado.' });
+      return res.status(200).json([]);
     }
 
     const rows = result.rows

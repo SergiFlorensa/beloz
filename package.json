@@ -2,28 +2,32 @@
   "name": "node_server",
   "version": "1.0.0",
   "main": "server.js",
+  "engines": {
+    "node": ">=22.18.0"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "dev:local": "node scripts/startLocal.js",
     "seed:casanova-visual-rag": "node scripts/scrapeCasanovaVisualRag.js",
     "seed:kokoro-visual-rag": "node scripts/scrapeKokoroVisualRag.js",
     "seed:little-bangkok-visual-rag": "node scripts/scrapeLittleBangkokVisualRag.js",
     "seed:ramen-shifu-visual-rag": "node scripts/scrapeRamenShifuVisualRag.js",
     "seed:chat-templates": "node scripts/seedChatResponseTemplates.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "bcrypt": "^5.1.1",
-    "body-parser": "^1.20.2",
+    "bcrypt": "^6.0.0",
     "cheerio": "^1.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "express-session": "^1.18.0",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "pdf-parse": "^2.4.5",
     "pg": "^8.13.0"
@@ -32,7 +36,6 @@
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
-    "@types/express-session": "^1.18.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/pg": "^8.11.10",
     "nodemon": "^3.1.7"

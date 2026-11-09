@@ -1,0 +1,10 @@
+const path = require('node:path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
+if (process.env.NODE_ENV === 'production') throw new Error('Use npm start for production.');
+process.env.NODE_ENV = 'development';
+process.env.DATABASE_URL ||= 'postgresql://postgres@127.0.0.1:5432/beloz';
+process.env.AI_RESPONSE_MODE ||= 'fast';
+const app = require('../server');
+const port = Number(process.env.PORT || 3000);
+const host = process.env.HOST || '127.0.0.1';
+app.listen(port, host, () => console.log(`Beloz local API listening on ${host}:${port}`));

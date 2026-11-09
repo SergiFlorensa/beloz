@@ -7,6 +7,7 @@ const {
 } = require('../controllers/pedidosController');
 
 const router = express.Router();
+router.use(require('../middleware/authenticateToken'));
 
 router.get('/', getPedidosPorUsuario);
 

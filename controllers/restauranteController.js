@@ -103,60 +103,16 @@ exports.getRestaurantesFiltradosPorTipos = async (req, res) => {
 
 
 exports.searchRestaurantes = async (req, res) => {
-  const query = String(req.query.query || '').trim();
-
-  if (!query) {
-    return res.status(400).json({ error: 'Search query is required' });
+  const query = req.query.query;
+  if (typeof query !== 'string' || !query.trim() || query.length > 100) {
+    return res.status(400).json({ error: 'Escribe una busqueda de entre 1 y 100 caracteres.' });
   }
-
   try {
     const table = await getRestaurantTableName();
-    const prefix = `${query}%`;
-    const contains = `%${query}%`;
-    const result = query.length === 1
-      ? await pool.query(
-        `SELECT *
-         FROM ${table}
-         WHERE name ILIKE $1
-            OR type_of_food ILIKE $1
-         ORDER BY
-           CASE
-             WHEN name ILIKE $1 THEN 0
-             WHEN type_of_food ILIKE $1 THEN 1
-             ELSE 2
-           END,
-           name ASC
-         LIMIT 12`,
-        [prefix]
-      )
-      : await pool.query(
-        `SELECT *
-         FROM ${table}
-         WHERE name ILIKE $1
-            OR type_of_food ILIKE $1
-            OR name ILIKE $2
-            OR type_of_food ILIKE $2
-         ORDER BY
-           CASE
-             WHEN name ILIKE $1 THEN 0
-             WHEN type_of_food ILIKE $1 THEN 1
-             WHEN name ILIKE $2 THEN 2
-             WHEN type_of_food ILIKE $2 THEN 3
-             ELSE 4
-           END,
-           name ASC
-         LIMIT 12`,
-        [prefix, contains]
-      );
-
-    if (result.rows.length === 0) {
-      return res.status(200).json({ message: 'No restaurants found for your search.' });
-    }
-
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
+    const result = await pool.query(`SELECT * FROM ${table}`);
+    return res.status(200).json(require('./catalogSearch').searchCatalog(result.rows, query));
+  } catch {
+    return res.status(500).json({ error: 'No se ha podido consultar el catalogo.' });
   }
 };
 

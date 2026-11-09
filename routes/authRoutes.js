@@ -11,6 +11,8 @@ const {
 const authenticateToken = require('../middleware/authenticateToken');
 
 const router = express.Router();
+const { createLimiter } = require('../middleware/security');
+router.use(createLimiter(20, 15 * 60 * 1000));
 
 router.post('/register', registerUser);
 
